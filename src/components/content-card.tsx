@@ -127,7 +127,7 @@ export function ContentCard({
         className={`relative rounded-2xl p-5
           ${tintClass}
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]
-          group-hover:-translate-y-0.5 transition-all duration-300 ease-out`}
+          transition-shadow duration-300 ease-out`}
       >
         <div className="flex flex-wrap gap-1.5 mb-3">
           {visibleTags.map((tag) => (

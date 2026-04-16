@@ -5,7 +5,7 @@ import {
   getPublishedContentByTags,
   getAvailableTags,
 } from "@/lib/supabase/queries";
-import { ContentCard } from "@/components/content-card";
+import { AnimatedFeed } from "@/components/animated-feed";
 import { TagFilter } from "@/components/tag-filter";
 
 async function getContent(tag: string | undefined) {
@@ -135,28 +135,7 @@ export default async function FeedPage({
                 </p>
               </div>
             ) : (
-              <div className="space-y-6">
-                {/* Featured card (latest tip) — full width */}
-                {featured && <ContentCard content={featured} featured />}
-
-                {/* Remaining tips — asymmetric masonry-style grid */}
-                {rest.length > 0 && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                    {rest.map((item, i) => (
-                      <div
-                        key={item.id}
-                        className={
-                          i === 0 && rest.length >= 3
-                            ? "md:col-span-2 lg:col-span-1"
-                            : ""
-                        }
-                      >
-                        <ContentCard content={item} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <AnimatedFeed featured={featured} rest={rest} />
             )}
           </div>
         </div>
