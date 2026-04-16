@@ -44,15 +44,15 @@ export default async function ContentPage({
   const platform = content.source_urls?.[0]?.platform;
 
   return (
-    <div className="mx-auto max-w-[700px] px-5 py-10">
+    <div className="mx-auto max-w-[680px] px-5 py-12 lg:py-16">
       <Link
         href="/"
-        className="inline-flex items-center gap-1 text-sm font-medium text-[#7C8590] hover:text-[#1A1A2E] dark:hover:text-[#EDF2EC] mb-8"
+        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-[#9B9B8E] hover:text-[#1A1A2E] dark:hover:text-[#EDF2EC] transition-colors mb-10"
       >
         <span aria-hidden="true">&larr;</span> Back to feed
       </Link>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <div className="flex flex-wrap gap-2 mb-5">
         {content.tags_tool.map((tag) => (
           <TagPill key={`tool-${tag}`} label={tag} category="tool" />
         ))}
@@ -64,22 +64,32 @@ export default async function ContentPage({
         ))}
       </div>
 
-      <h1 className="text-4xl font-extrabold tracking-tight font-heading text-[#1A1A2E] dark:text-[#EDF2EC]">
+      <h1
+        className="font-heading font-extrabold tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] leading-[1.08] max-w-[20ch]"
+        style={{ fontSize: "clamp(1.75rem, 3vw + 0.5rem, 2.5rem)" }}
+      >
         {content.title}
       </h1>
 
-      <p className="mt-3 text-sm text-[#7C8590]">
+      <p className="mt-4 text-[14px] text-[#9B9B8E] tracking-wide">
         {creator && (
           <>
-            Source: @{creator}
-            {platform && ` on ${platform === "youtube" ? "YouTube" : "Reddit"}`}
-            <span className="mx-1.5">&middot;</span>
+            <span className="font-medium text-[#5A5A6E] dark:text-[#A8B0A6]">
+              {creator}
+            </span>
+            {platform && (
+              <span className="text-[#9B9B8E]">
+                {" "}
+                on {platform === "youtube" ? "YouTube" : "Reddit"}
+              </span>
+            )}
+            <span className="mx-2 opacity-40">/</span>
           </>
         )}
         {formatDate(content.published_at)}
       </p>
 
-      <div className="mt-10">
+      <div className="mt-12">
         <MarkdownBody content={content.body} />
       </div>
 
