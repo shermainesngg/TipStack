@@ -51,36 +51,36 @@
 :root {
   --background: #EDF2EC;
   --foreground: #1A1A2E;
-  --card: #FFFFFF;
+  --card: #fafcfa;            /* tinted white — never pure #fff */
   --card-foreground: #1A1A2E;
-  --popover: #FFFFFF;
+  --popover: #fafcfa;
   --popover-foreground: #1A1A2E;
-  --primary: #2D2D3F;
-  --primary-foreground: #FFFFFF;
-  --secondary: #E2E8E0;
+  --primary: #1A1A2E;
+  --primary-foreground: #fafcfa;
+  --secondary: #dde4db;
   --secondary-foreground: #1A1A2E;
-  --muted: #E2E8E0;
-  --muted-foreground: #7C8590;
-  --accent: #E2E8E0;
+  --muted: #dde4db;
+  --muted-foreground: #6E6E7E;
+  --accent: #dde4db;
   --accent-foreground: #1A1A2E;
-  --destructive: #E57373;
-  --border: #D8DED6;
-  --input: #D8DED6;
-  --ring: #2D2D3F;
-  --chart-1: #F5B0AA;
-  --chart-2: #C5B3E6;
-  --chart-3: #8ECDA0;
-  --chart-4: #F5D98C;
-  --chart-5: #A8D4E6;
+  --destructive: #C4534A;
+  --border: #cdd5cb;
+  --input: #cdd5cb;
+  --ring: #1A1A2E;
+  --chart-1: #C4534A;
+  --chart-2: #7B5EA7;
+  --chart-3: #3D7E52;
+  --chart-4: #9E8432;
+  --chart-5: #3D6E8E;
   --radius: 0.625rem;
   --sidebar: #EDF2EC;
   --sidebar-foreground: #1A1A2E;
-  --sidebar-primary: #2D2D3F;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #E2E8E0;
+  --sidebar-primary: #1A1A2E;
+  --sidebar-primary-foreground: #fafcfa;
+  --sidebar-accent: #dde4db;
   --sidebar-accent-foreground: #1A1A2E;
-  --sidebar-border: #D8DED6;
-  --sidebar-ring: #2D2D3F;
+  --sidebar-border: #cdd5cb;
+  --sidebar-ring: #1A1A2E;
 }
 
 .dark {
@@ -102,11 +102,11 @@
   --border: #3A433A;
   --input: #3A433A;
   --ring: #EDF2EC;
-  --chart-1: #F5B0AA;
-  --chart-2: #C5B3E6;
-  --chart-3: #8ECDA0;
-  --chart-4: #F5D98C;
-  --chart-5: #A8D4E6;
+  --chart-1: #E5897E;
+  --chart-2: #B89DD4;
+  --chart-3: #7EBE8E;
+  --chart-4: #D4B85E;
+  --chart-5: #7EB5D4;
   --sidebar: #161B16;
   --sidebar-foreground: #EDF2EC;
   --sidebar-primary: #EDF2EC;
@@ -135,4 +135,13 @@
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
 }

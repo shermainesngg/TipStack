@@ -7,22 +7,22 @@ const TAG_STYLES: Record<
   { bg: string; text: string; darkBg: string; darkText: string }
 > = {
   tool: {
-    bg: "bg-[#FADCD9]",
-    text: "text-[#994D4D]",
+    bg: "bg-[#f0dbd8]",
+    text: "text-[#8B4A4A]",
     darkBg: "dark:bg-[#3D2424]",
-    darkText: "dark:text-[#F5B0AA]",
+    darkText: "dark:text-[#E5A097]",
   },
   focus: {
-    bg: "bg-[#E5DCFA]",
-    text: "text-[#6B47A8]",
+    bg: "bg-[#e0d8ef]",
+    text: "text-[#5E3F96]",
     darkBg: "dark:bg-[#2A1F3D]",
-    darkText: "dark:text-[#C5B3E6]",
+    darkText: "dark:text-[#B89DD4]",
   },
   workflow: {
-    bg: "bg-[#D5EFDA]",
-    text: "text-[#2D6B45]",
+    bg: "bg-[#d2e8d6]",
+    text: "text-[#2D6040]",
     darkBg: "dark:bg-[#1A3327]",
-    darkText: "dark:text-[#8ECDA0]",
+    darkText: "dark:text-[#7EBE8E]",
   },
 };
 
@@ -44,7 +44,7 @@ export function TagPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full whitespace-nowrap",
+        "inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md whitespace-nowrap tracking-wide",
         styles.bg,
         styles.text,
         styles.darkBg,

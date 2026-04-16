@@ -2,7 +2,6 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
-import { Filter, Wrench, Crosshair, Zap } from "lucide-react";
 
 interface TagFilterProps {
   tools: string[];
@@ -40,18 +39,17 @@ export function TagFilter({
 
   if (variant === "sidebar") {
     const sidebarBtnClass = (tag: string | null) =>
-      `w-full text-left rounded-xl px-3 py-2 text-sm font-medium transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#2D2D3F] focus-visible:ring-offset-2 ${
+      `w-full text-left rounded-lg px-2.5 py-1.5 text-[13px] transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#2D2D3F] focus-visible:ring-offset-2 ${
         activeTag === tag
-          ? "bg-[#2D2D3F] text-white dark:bg-[#EDF2EC] dark:text-[#161B16]"
-          : "text-[#64748B] hover:bg-[#E2E8E0] dark:text-[#8C9688] dark:hover:bg-[#2A322A]"
+          ? "font-semibold text-[#1A1A2E] bg-[#dde4db] dark:text-[#EDF2EC] dark:bg-[#2A322A]"
+          : "text-[#6E6E7E] hover:text-[#1A1A2E] dark:text-[#8C9688] dark:hover:text-[#EDF2EC]"
       }`;
 
     return (
-      <div className="rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)] dark:bg-[#1E241E] dark:shadow-none">
-        <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] dark:text-[#EDF2EC] mb-4">
-          <Filter className="h-4 w-4 text-[#A0A8B0]" />
-          Filters
-        </div>
+      <nav aria-label="Filter by tag">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9B9B8E] mb-3">
+          Filter
+        </p>
 
         <button
           className={sidebarBtnClass(null)}
@@ -61,11 +59,10 @@ export function TagFilter({
         </button>
 
         {tools.length > 0 && (
-          <div className="mt-5">
-            <div className="flex items-center gap-2 mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-[#A0A8B0]">
-              <Wrench className="h-3 w-3" />
+          <div className="mt-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9B9B8E] mb-2 px-2.5">
               Tools
-            </div>
+            </p>
             <div className="space-y-0.5">
               {tools.map((tag) => (
                 <button
@@ -81,11 +78,10 @@ export function TagFilter({
         )}
 
         {focuses.length > 0 && (
-          <div className="mt-5">
-            <div className="flex items-center gap-2 mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-[#A0A8B0]">
-              <Crosshair className="h-3 w-3" />
+          <div className="mt-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9B9B8E] mb-2 px-2.5">
               Focus
-            </div>
+            </p>
             <div className="space-y-0.5">
               {focuses.map((tag) => (
                 <button
@@ -101,11 +97,10 @@ export function TagFilter({
         )}
 
         {workflows.length > 0 && (
-          <div className="mt-5">
-            <div className="flex items-center gap-2 mb-2 px-3 text-xs font-semibold uppercase tracking-wider text-[#A0A8B0]">
-              <Zap className="h-3 w-3" />
+          <div className="mt-6">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9B9B8E] mb-2 px-2.5">
               Workflows
-            </div>
+            </p>
             <div className="space-y-0.5">
               {workflows.map((tag) => (
                 <button
@@ -119,21 +114,21 @@ export function TagFilter({
             </div>
           </div>
         )}
-      </div>
+      </nav>
     );
   }
 
   // Chips variant (mobile)
   const chipClass = (tag: string | null) =>
-    `rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#2D2D3F] focus-visible:ring-offset-2 ${
+    `rounded-full px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap transition-colors duration-150 focus-visible:ring-2 focus-visible:ring-[#2D2D3F] focus-visible:ring-offset-2 ${
       activeTag === tag
-        ? "bg-[#2D2D3F] text-white dark:bg-[#EDF2EC] dark:text-[#161B16]"
-        : "bg-white text-[#64748B] hover:bg-[#F5F5F0] dark:bg-[#1E241E] dark:text-[#8C9688] dark:hover:bg-[#2A322A]"
+        ? "bg-[#1A1A2E] text-[#fafcfa] dark:bg-[#EDF2EC] dark:text-[#161B16]"
+        : "text-[#6E6E7E] hover:text-[#1A1A2E] hover:bg-[#dde4db] dark:text-[#8C9688] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A]"
     }`;
 
   return (
     <div
-      className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide
+      className="flex gap-1.5 overflow-x-auto pb-2 scrollbar-hide
         [mask-image:linear-gradient(to_right,black_calc(100%-40px),transparent)]"
       role="navigation"
       aria-label="Filter by tag"

@@ -7,27 +7,27 @@ export function MarkdownBody({ content }: { content: string }) {
       remarkPlugins={[remarkGfm]}
       components={{
         h2: ({ children }) => (
-          <h2 className="mt-12 mb-4 text-2xl font-bold tracking-tight font-heading text-[#1A1A2E] dark:text-[#EDF2EC]">
+          <h2 className="mt-14 mb-5 text-[1.5rem] font-bold tracking-tight font-heading text-[#1A1A2E] dark:text-[#EDF2EC]">
             {children}
           </h2>
         ),
         h3: ({ children }) => (
-          <h3 className="mt-8 mb-3 text-xl font-semibold font-heading text-[#1A1A2E] dark:text-[#EDF2EC]">
+          <h3 className="mt-10 mb-3 text-[1.15rem] font-semibold font-heading text-[#1A1A2E] dark:text-[#EDF2EC]">
             {children}
           </h3>
         ),
         p: ({ children }) => (
-          <p className="mb-6 text-base leading-[1.7] text-[#3D3D50] dark:text-[#C8D0C6]">
+          <p className="mb-6 text-[16.5px] leading-[1.75] text-[#3D3D50] dark:text-[#C8D0C6] max-w-[65ch]">
             {children}
           </p>
         ),
         ul: ({ children }) => (
-          <ul className="mb-6 list-disc pl-6 space-y-2 text-base leading-[1.7] text-[#3D3D50] dark:text-[#C8D0C6]">
+          <ul className="mb-6 list-disc pl-6 space-y-2.5 text-[16.5px] leading-[1.75] text-[#3D3D50] dark:text-[#C8D0C6]">
             {children}
           </ul>
         ),
         ol: ({ children }) => (
-          <ol className="mb-6 list-decimal pl-6 space-y-2 text-base leading-[1.7] text-[#3D3D50] dark:text-[#C8D0C6]">
+          <ol className="mb-6 list-decimal pl-6 space-y-2.5 text-[16.5px] leading-[1.75] text-[#3D3D50] dark:text-[#C8D0C6]">
             {children}
           </ol>
         ),
@@ -40,7 +40,7 @@ export function MarkdownBody({ content }: { content: string }) {
         a: ({ href, children }) => (
           <a
             href={href}
-            className="font-medium text-[#6B47A8] hover:text-[#5B3D99] dark:text-[#C5B3E6] dark:hover:text-[#D4C8F0]"
+            className="font-medium text-[#6B47A8] underline underline-offset-2 decoration-[#6B47A8]/30 hover:decoration-[#6B47A8] dark:text-[#C5B3E6] dark:decoration-[#C5B3E6]/30 dark:hover:decoration-[#C5B3E6] transition-colors"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -48,7 +48,7 @@ export function MarkdownBody({ content }: { content: string }) {
           </a>
         ),
         blockquote: ({ children }) => (
-          <blockquote className="my-6 rounded-xl border-l-4 border-[#8ECDA0] bg-[#EDF5EF] p-4 dark:bg-[#1A3327]/50 dark:border-[#8ECDA0]">
+          <blockquote className="my-8 rounded-xl bg-[#e8efe7] py-4 px-5 dark:bg-[#1E2A1E]">
             {children}
           </blockquote>
         ),
@@ -62,7 +62,7 @@ export function MarkdownBody({ content }: { content: string }) {
             );
           }
           return (
-            <code className="rounded-lg bg-[#E2E8E0] px-1.5 py-0.5 font-mono text-[15px] text-[#1A1A2E] dark:bg-[#2A322A] dark:text-[#EDF2EC]">
+            <code className="rounded-md bg-[#dde4db] px-1.5 py-0.5 font-mono text-[15px] text-[#1A1A2E] dark:bg-[#2A322A] dark:text-[#EDF2EC]">
               {children}
             </code>
           );

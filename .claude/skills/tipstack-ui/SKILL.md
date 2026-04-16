@@ -5,9 +5,22 @@ description: Design system and UI reference for the TipStack website — an AI w
 
 # TipStack UI Design System
 
-This is the single source of truth for TipStack's visual design. Every frontend component, page layout, and style decision must follow this system. The goal: a warm, inviting, dashboard-like aesthetic with maximum readability for a content-heavy AI tips site.
+This is the single source of truth for TipStack's visual design. Every frontend component, page layout, and style decision must follow this system. The goal: a warm, curated, editorial aesthetic with maximum readability for a content-heavy AI tips site.
 
-TipStack uses **Next.js App Router**, **Tailwind CSS**, and **shadcn/ui**. The visual style is inspired by modern education/SaaS dashboards — soft sage backgrounds, warm pastel accents, generous rounding, and shadow-based depth (no harsh borders).
+TipStack uses **Next.js App Router**, **Tailwind CSS**, and **shadcn/ui**. The visual style is inspired by well-designed editorial sites and zines — warm sage backgrounds, tinted surfaces, strong typographic hierarchy, and deliberate use of whitespace.
+
+## Anti-patterns (from impeccable)
+
+These patterns are BANNED in TipStack. If you find yourself writing any of them, stop and redesign:
+
+1. **Side-stripe borders on cards** — No `border-left` or `border-right` > 1px as colored accent stripes. Use tinted backgrounds or other structural approaches instead.
+2. **Reflex fonts** — Never use Inter, Plus Jakarta Sans, DM Sans, Outfit, Space Grotesk, or any font on impeccable's `reflex_fonts_to_reject` list.
+3. **Icon tiles above headings** — No rounded icon containers stacked above text. Place icons inline or omit them.
+4. **Identical card grids** — Vary card sizes or layouts. Don't repeat the same card shape endlessly.
+5. **Pure white or pure black** — Always tint. `#fafcfa` not `#ffffff`. `#1A1A2E` not `#000000`.
+6. **Gray text on colored backgrounds** — Use a tint of the background color instead.
+7. **Cards wrapped in cards** — Flatten the hierarchy. Not everything needs a container.
+8. **Gradient text** — Solid colors only for text.
 
 ## Fonts
 
@@ -15,54 +28,54 @@ Load from Google Fonts. Three families, each with a clear role:
 
 | Role | Font | Why |
 |------|------|-----|
-| Headings | **Plus Jakarta Sans** (fallback: Inter) | Geometric, modern, friendly feel at large sizes |
-| Body & UI | **Inter** | Industry standard for screen readability at all sizes |
-| Code | **JetBrains Mono** (fallback: Fira Code) | Ligatures, clear at small sizes for technical content |
+| Headings | **Bricolage Grotesque** (500–800) | Distinctive geometric with optical sizing, warm and characterful |
+| Body & UI | **Source Serif 4** (400–600) | Warm, excellent reading font at 16px, gives credibility to content |
+| Code | **JetBrains Mono** | Ligatures, clear at small sizes for technical content |
 
 ```tsx
 // layout.tsx — Google Fonts import
-import { Plus_Jakarta_Sans, Inter, JetBrains_Mono } from 'next/font/google'
+import { Bricolage_Grotesque, Source_Serif_4, JetBrains_Mono } from 'next/font/google'
 ```
+
+The pairing of a geometric sans heading with a readable serif body creates visual contrast and editorial warmth.
 
 ## Type Scale
 
-Body text at 16px with 1.7 line-height is non-negotiable for reading comfort. Everything else derives from that anchor.
+Body text at 16.5px with 1.75 line-height is the anchor. Headings use `clamp()` for fluid sizing.
 
-| Token | Size | Weight | Line Height | Letter Spacing | Use |
-|-------|------|--------|-------------|----------------|-----|
-| h1 | 36–42px | 700–800 | 1.1–1.2 | -0.02em | Page titles |
-| h2 | 24–28px | 600–700 | 1.3 | -0.01em | Section headings |
-| h3 | 20–22px | 600 | 1.4 | — | Subsections |
-| body | 16–17px | 400 | 1.6–1.75 | — | Prose content |
-| card-title | 18–20px | 600 | 1.3 | — | Feed card titles |
-| meta | 13–14px | 400–500 | 1.5 | — | Timestamps, secondary info |
-| tag | 13px | 500 | 1 | — | Tag pills |
-
-**Spacing around headings in article body:**
-- H2: 48–64px top margin, 16–24px bottom margin (creates clear section breaks)
-- H3: 32px top margin, 12px bottom margin
-- Paragraphs: 24px between them (block spacing, no first-line indent)
+| Token | Size | Weight | Line Height | Use |
+|-------|------|--------|-------------|-----|
+| h1 | `clamp(2rem, 4vw + 1rem, 3.25rem)` | 800 | 1.05 | Page titles (max-width: 14ch for short lines) |
+| h2 | `clamp(1.5rem, 2vw + 0.5rem, 2rem)` | 700 | 1.1 | Featured card titles |
+| h3 | 1.15rem | 600 | — | Subsections |
+| body | 16.5px | 400 | 1.75 | Prose content (max-width: 65ch) |
+| card-title | text-lg (18px) | 600 | snug | Feed card titles |
+| meta | 12–14px | 400–500 | — | Timestamps, secondary info |
+| label | 11px | 600 | — | Uppercase tracking labels (tracking-[0.12em]) |
 
 **Rules:**
-- Max 3 font weights per page: 400 (body), 500 or 600 (emphasis/UI), 700 (headings)
-- Body text max-width: 700px — never wider. This keeps lines at 65–75 characters, the optimal range for sustained reading.
-- Apply `antialiased` font smoothing globally.
+- All headings use `font-heading` (Bricolage Grotesque)
+- Body text max-width: 65ch — never wider
+- Use `clamp()` for all heading sizes on marketing/content pages
+- Apply `antialiased` font smoothing globally
 
 ## Color Palette
 
-The palette is **warm and organic** — sage greens, soft pinks, lavenders, and mints. No cold blues or saturated indigos. The aesthetic is friendly and approachable, like a modern education dashboard.
+The palette is **warm and organic** — sage greens, muted earth tones, subtle tinted surfaces. No cold blues, no saturated pastels, no "AI color palette" (cyan-on-dark, purple gradients, neon accents).
 
 ### Light Mode (Default)
 
 | Token | Hex | Use |
 |-------|-----|-----|
-| bg-primary | `#EDF2EC` | Page background. Sage mint — warm, organic, never cold gray or pure white. |
-| bg-surface | `#FFFFFF` | Cards, panels, modals |
-| bg-muted | `#E2E8E0` | Subtle backgrounds, disabled states, skeleton loaders |
-| text-primary | `#1A1A2E` | Headings, body text — dark navy, not pure black |
-| text-body | `#3D3D50` | Prose content in article body — slightly softer than headings |
-| text-secondary | `#7C8590` | Descriptions, metadata, secondary info |
-| text-muted | `#A0A8B0` | Timestamps, tertiary info, section labels |
+| bg-primary | `#EDF2EC` | Page background — sage mint |
+| bg-surface | `#fafcfa` | Featured cards, elevated surfaces — tinted white, NEVER pure #fff |
+| bg-muted | `#dde4db` | Subtle backgrounds, hover states, active filter states |
+| text-primary | `#1A1A2E` | Headings — dark navy-tinted black |
+| text-body | `#3D3D50` | Prose content |
+| text-secondary | `#5A5A6E` | Summaries, descriptions |
+| text-muted | `#9B9B8E` | Timestamps, metadata labels |
+| text-label | `#6E6E7E` | Creator names, secondary metadata |
+| text-warm | `#8B6E4E` | "Latest" label, warm accent text |
 
 ### Dark Mode
 
@@ -71,402 +84,140 @@ The palette is **warm and organic** — sage greens, soft pinks, lavenders, and 
 | bg-primary | `#161B16` | Page background — warm dark green-black |
 | bg-surface | `#1E241E` | Cards, panels |
 | bg-muted | `#2A322A` | Subtle backgrounds |
-| border | `#3A433A` | Borders (used in dark mode only) |
+| border | `#3A433A` | Borders (used in dark mode) |
 | text-primary | `#EDF2EC` | Headings, body |
 | text-body | `#C8D0C6` | Prose content |
-| text-secondary | `#8C9688` | Descriptions |
-
-Dark mode uses **shadow-based depth** with warm dark greens, not cold slates. Cards use `shadow-[0_2px_12px_rgba(0,0,0,0.2)]` for depth.
-
-### Brand / Interactive Colors
-
-The primary interactive color is **dark charcoal** — not indigo. This matches the warm, organic aesthetic.
-
-| Token | Hex | Use |
-|-------|-----|-----|
-| interactive-primary | `#2D2D3F` | Active filter states, logo bg, focus rings — THE action color |
-| interactive-primary (dark) | `#EDF2EC` | Inverted in dark mode — light text/bg for active states |
-| link | `#6B47A8` | Text links — warm purple |
-| link-hover | `#5B3D99` | Link hover state |
-| link (dark) | `#C5B3E6` | Dark mode links |
-
-All interactive elements (buttons, active filters, focus rings) use `interactive-primary`. Links use the warm purple.
-
-### Pastel Accent Palette
-
-These pastels are used for stat cards, tag pills, card accents, and decorative elements. Each has a bg shade and a deeper text/icon shade.
-
-| Name | Background | Deeper shade (icons/text) | Use |
-|------|-----------|--------------------------|-----|
-| **Pink** | `#FADCD9` | `#994D4D` | Tool tags, "Tips" stat card, featured badge |
-| **Lavender** | `#E5DCFA` | `#6B47A8` | Role tags, "Tools" stat card, links |
-| **Mint** | `#D5EFDA` | `#2D6B45` | Workflow tags, "Workflows" stat card, blockquotes |
-| **Peach** | `#FDEBD3` | `#9B6B3D` | Secondary accents |
-| **Gold** | `#FFF3D6` | `#8B7030` | Research-related accents |
-
-Icon container backgrounds use a slightly deeper shade: pink icon bg `#F5C4BE`, lavender icon bg `#D4C8F0`, mint icon bg `#C0E6C8`.
+| text-secondary | `#A8B0A6` | Descriptions |
 
 ### Tag Category Colors
 
-Each of TipStack's three tag categories gets a distinct pastel family:
+Muted, sophisticated tints — not bright candy pastels:
 
-| Category | Light bg | Light text | Dark bg | Dark text | Examples |
-|----------|---------|------------|---------|-----------|----------|
-| **Tool** | `#FADCD9` | `#994D4D` | `#3D2424` | `#F5B0AA` | Claude Code, Cursor, GPT, Copilot |
-| **Role** | `#E5DCFA` | `#6B47A8` | `#2A1F3D` | `#C5B3E6` | Developer, PM, Designer, Founder |
-| **Workflow** | `#D5EFDA` | `#2D6B45` | `#1A3327` | `#8ECDA0` | Coding, Automation, Writing, Research |
+| Category | Light bg | Light text | Dark bg | Dark text |
+|----------|---------|------------|---------|-----------|
+| **Tool** | `#f0dbd8` | `#8B4A4A` | `#3D2424` | `#E5A097` |
+| **Focus** | `#e0d8ef` | `#5E3F96` | `#2A1F3D` | `#B89DD4` |
+| **Workflow** | `#d2e8d6` | `#2D6040` | `#1A3327` | `#7EBE8E` |
 
-Tag pill styling: `text-xs font-medium px-2.5 py-1 rounded-full`. No border needed — background color provides the visual.
+Tag pill styling: `text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide`. No border. Rounded-md, not rounded-full.
 
-### Card Left-Border Accent Colors (Pastel)
+### Card Tinted Backgrounds
 
-Each workflow type maps to a soft pastel accent for the card's left border:
+Regular cards use a full-surface tint based on workflow type instead of a white card + side-stripe:
 
-| Workflow | Color | Hex |
-|----------|-------|-----|
-| coding / code-generation | Soft green | `#8ECDA0` |
-| automation / pipeline | Soft lavender | `#C5B3E6` |
-| writing | Soft pink | `#F5B0AA` |
-| research | Soft gold | `#F5D98C` |
-| debugging | Soft pink | `#F5B0AA` |
-| design | Soft rose | `#F5C4D0` |
-| testing / code-review | Soft blue | `#A8D4E6` |
-| developer-experience | Soft periwinkle | `#A8C8F0` |
-| team-workflow / stakeholder | Soft peach | `#F5D0A0` |
+| Workflow | Light bg | Dark bg |
+|----------|---------|---------|
+| coding | `#f0f8f2` | `#1a2b1e` |
+| automation | `#f3eff8` | `#221e2e` |
+| writing | `#faf0ef` | `#2e1e1c` |
+| research | `#f9f5ec` | `#2a261a` |
+| testing | `#eef5fa` | `#1a2530` |
+
+### Interactive Colors
+
+| Token | Use |
+|-------|-----|
+| `#1A1A2E` (light) / `#EDF2EC` (dark) | Active filter chips, focus rings |
+| `#dde4db` | Active sidebar filter bg, hover states |
+| `#6B47A8` / `#C5B3E6` (dark) | Text links — warm purple |
 
 ### No Borders in Light Mode
 
-Light mode cards use **shadows only** for depth — no visible borders. This creates the soft, floating card look.
-- Card resting: `shadow-[0_2px_12px_rgba(0,0,0,0.06)]`
-- Card hover: `shadow-[0_6px_20px_rgba(0,0,0,0.1)]`
-- Featured card hover: `shadow-[0_8px_24px_rgba(0,0,0,0.1)]`
-
-Dark mode can add subtle borders (`border-[#3A433A]`) since shadows are less visible.
+Light mode uses shadows and tinted backgrounds — no visible borders on cards or panels.
+Dark mode may add subtle borders (`border-[#3A433A]`) for definition.
 
 ## Spacing
 
-8px base grid. Use Tailwind spacing utilities:
+8px base grid. Key rhythm:
+- Card internal padding: `p-5` (regular), `p-8 lg:p-10` (featured)
+- Section gaps: `space-y-6` between cards
+- Desktop sidebar gap: `gap-10`
+- Stats line: `gap-x-6`
+- Tag gaps: `gap-1.5` (pills), `gap-2` (filter chips)
 
-| Token | Value | Tailwind | Use |
-|-------|-------|----------|-----|
-| space-1 | 4px | p-1 | Inline padding, icon gaps |
-| space-2 | 8px | p-2 | Tag padding, tight spacing |
-| space-3 | 12px | p-3 | Small card internal padding |
-| space-4 | 16px | p-4 | Standard padding, gaps |
-| space-5 | 20px | p-5 | Card padding |
-| space-6 | 24px | p-6 | Small section padding, card gap |
-| space-8 | 32px | p-8 | Section gaps |
-| space-10 | 40px | p-10 | Major section padding |
-| space-12 | 48px | p-12 | Page section spacing |
-| space-16 | 64px | p-16 | Hero/footer spacing |
-
-**Key rule:** Use spacing, not dividers. Separate sections with 32–48px gaps instead of `<hr>` elements. The design should breathe.
+**Key rule:** Use spacing, not dividers. Separate sections with whitespace, not `<hr>` elements.
 
 ## Border Radius
 
-Everything is generously rounded — this is central to the warm, friendly aesthetic.
-
-| Element | Radius | Tailwind |
-|---------|--------|----------|
-| Cards | 16px | `rounded-2xl` |
-| Stat pills | 16px | `rounded-2xl` |
-| Sidebar filter panel | 16px | `rounded-2xl` |
-| Tag pills | full | `rounded-full` |
-| Filter chips | full | `rounded-full` |
-| Icon containers | 12px | `rounded-xl` |
-| Logo icon | 12px | `rounded-xl` |
-| Code blocks | 12px | `rounded-xl` |
-| Inline code | 8px | `rounded-lg` |
-| Buttons | 12px | `rounded-xl` |
-
-Never use sharp corners (`rounded-none`) or small radius (`rounded`, `rounded-md`). Minimum is `rounded-lg`.
+| Element | Tailwind |
+|---------|----------|
+| Cards | `rounded-2xl` |
+| Tag pills | `rounded-md` |
+| Filter chips | `rounded-full` |
+| Code blocks | `rounded-xl` |
+| Inline code | `rounded-md` |
 
 ## Page Layouts
 
 ### Feed Page (Home)
 
-```
-┌─────────────────────────────────────────────────┐
-│  Header (sticky, blends with sage bg)           │
-│  [Logo icon] TipStack                           │
-├─────────────────────────────────────────────────┤
-│                                                 │
-│  AI Workflow Tips              ← h1, bold       │
-│  Subtitle text                 ← text-secondary │
-│                                                 │
-│  ┌─────────┐ ┌─────────┐ ┌──────────┐         │
-│  │ 4 Tips  │ │ 3 Tools │ │ 5 Flows  │← pastel │
-│  │  (pink) │ │ (lav.)  │ │ (mint)   │  stats  │
-│  └─────────┘ └─────────┘ └──────────┘         │
-│                                                 │
-│  ┌──────────┐  ┌──────────────────────────────┐│
-│  │ Filters  │  │  Featured Card (latest tip)  ││
-│  │ (sidebar)│  │  [Sparkles] Latest            ││
-│  │ ──────── │  │  Title (xl-2xl, bold)         ││
-│  │ TOOLS    │  │  Summary (3-line clamp)       ││
-│  │ · Claude │  │  @creator · date · tags       ││
-│  │ · Cursor │  └──────────────────────────────┘│
-│  │ ──────── │  ┌────────┐  ┌────────┐          │
-│  │ ROLES    │  │ Card 2 │  │ Card 3 │ 2-col   │
-│  │ · Dev    │  └────────┘  └────────┘ grid     │
-│  │ · PM     │  ┌────────┐                      │
-│  │ ──────── │  │ Card 4 │                      │
-│  │ WORKFLOW │  └────────┘                      │
-│  │ · Coding │                                  │
-│  └──────────┘                                  │
-│                                                 │
-└─────────────────────────────────────────────────┘
-```
+- Left-aligned hero with fluid heading (`clamp`)
+- Inline stat line (not stat cards): `4 tips  9 tools  11 workflows`
+- Desktop: bare sidebar navigation (no card wrapper) + content column
+- Featured card: full-width, `#fafcf9` surface, layered shadow
+- Regular cards: tinted backgrounds per workflow, 2-column grid
+- Empty state: left-aligned text with personality, no generic icons
 
-- Max width: 1200px, centered
-- Desktop: sidebar filter (220px) + content column with 32px gap
-- Mobile: horizontal filter chips (sticky), single column cards
-- Featured card spans full content width
-- Remaining cards: `grid grid-cols-1 md:grid-cols-2 gap-5`
-- Mobile padding: 20px horizontal
+### Detail Page
 
-### Detail Page (Content)
-
-```
-┌─────────────────────────────────────────────┐
-│  Header                                     │
-├─────────────────────────────────────────────┤
-│                                             │
-│  ← Back to feed         (text-secondary)    │
-│                                             │
-│  [Tool] [Role] [Workflow]  ← pastel pills   │
-│                                             │
-│  Article Title (H1, extrabold)              │
-│  Source: @creator on YouTube · Apr 10       │
-│                                             │
-│  Body content (max-w: 700px)                │
-│  ...                                        │
-│                                             │
-│  ┌─ Source Attribution Card ──────────┐     │
-│  │  by @creator on YouTube            │     │
-│  │  View Original →  (warm purple)    │     │
-│  └────────────────────────────────────┘     │
-└─────────────────────────────────────────────┘
-```
-
-- Content column: max-width 700px, centered
-- Back link: `text-[#7C8590] hover:text-[#1A1A2E]`
+- Max-width: 680px, generous vertical padding
+- Back link: small, muted, `text-[#9B9B8E]`
 - Tags above the title
-- Source attribution cards: white bg, rounded-2xl, shadow (no border)
+- Fluid title: `clamp(1.75rem, 3vw + 0.5rem, 2.5rem)`, max-width: 20ch
+- Source attribution: divider line, no card wrapper
 
 ## Component Patterns
 
 ### Header
 
-Minimal, blends with the sage page background. No border, no gradient line.
+Minimal text logo. No icon tiles, no borders, no gradients.
 
 ```tsx
-<header className="sticky top-0 z-40 bg-[#EDF2EC]/90 backdrop-blur-sm dark:bg-[#161B16]/90">
-  <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-5">
-    <Link href="/" className="flex items-center gap-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#2D2D3F] dark:bg-[#EDF2EC]">
-        <Layers className="h-4 w-4 text-white dark:text-[#161B16]" />
-      </div>
-      <span className="text-lg font-bold tracking-tight font-heading">TipStack</span>
+<header className="sticky top-0 z-40 bg-[#EDF2EC]/90 backdrop-blur-sm">
+  <div className="mx-auto flex h-16 max-w-[1200px] items-center px-5">
+    <Link href="/" className="text-lg font-heading font-bold tracking-tight">
+      TipStack
     </Link>
   </div>
 </header>
 ```
 
-### Stat Pills
+### Sidebar Filter (Desktop)
 
-Three pastel-colored stat cards in the heading area, each with an icon in a deeper-shade container:
+Bare navigation with section labels. No card wrapper. Uses active state bg for selection.
 
-```tsx
-<div className="flex items-center gap-3 rounded-2xl bg-[#FADCD9] px-4 py-3">
-  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F5C4BE]">
-    <Lightbulb className="h-4 w-4 text-[#994D4D]" />
-  </div>
-  <div>
-    <p className="text-xl font-bold text-[#1A1A2E] leading-none">{count}</p>
-    <p className="text-xs text-[#994D4D] mt-0.5">Tips</p>
-  </div>
-</div>
-```
+### Feed Cards
 
-Repeat with lavender (`#E5DCFA` / `#D4C8F0` / `#6B47A8`) for Tools and mint (`#D5EFDA` / `#C0E6C8` / `#2D6B45`) for Workflows.
+Regular cards: tinted background, tags on top, title, summary, meta line at bottom.
+Featured card: slightly elevated surface (`#fafcf9`), layered shadow, fluid title.
+Neither card type uses side-stripe borders or icon tiles.
 
-### Feed Card (Regular)
+### Blockquotes
 
-White card, pastel left accent border, shadow-based depth, generous rounding:
+Full tinted background (`#e8efe7`), rounded-xl. No border-left accent stripe.
 
-```tsx
-<article className="relative rounded-2xl bg-white p-5
-  shadow-[0_2px_12px_rgba(0,0,0,0.06)]
-  group-hover:shadow-[0_6px_20px_rgba(0,0,0,0.1)]
-  group-hover:-translate-y-0.5 transition-all duration-200
-  dark:bg-[#1E241E] dark:shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-  {/* Pastel left accent border */}
-  <div className="absolute left-0 top-4 bottom-4 w-1 rounded-full bg-[#8ECDA0]" />
-  <div className="pl-3">
-    <p className="text-[13px] font-medium text-[#A0A8B0]">CATEGORY</p>
-    <h2 className="mt-1.5 text-[18px] font-semibold leading-snug text-[#1A1A2E] line-clamp-2 font-heading">Title</h2>
-    <p className="mt-2 text-[15px] leading-relaxed text-[#7C8590] line-clamp-2">Summary</p>
-    <div className="mt-3 flex items-center justify-between">
-      <p className="text-[13px] text-[#A0A8B0]">@creator · date</p>
-      <div className="flex gap-1.5">{/* TagPills, max 3 */}</div>
-    </div>
-  </div>
-</article>
-```
+### Source Attribution
 
-### Feed Card (Featured)
-
-Full-width card for the latest tip, with a pastel pink icon and "Latest" badge:
-
-```tsx
-<article className="rounded-2xl bg-white p-6 lg:p-8
-  shadow-[0_2px_12px_rgba(0,0,0,0.06)]
-  group-hover:shadow-[0_8px_24px_rgba(0,0,0,0.1)]
-  transition-all duration-200
-  dark:bg-[#1E241E]">
-  <div className="flex items-start gap-4">
-    <div className="shrink-0 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FADCD9]">
-      <Sparkles className="h-6 w-6 text-[#994D4D]" />
-    </div>
-    <div className="min-w-0 flex-1">
-      <span className="text-xs font-semibold uppercase tracking-wider text-[#994D4D]">Latest</span>
-      <h2 className="mt-1.5 text-xl lg:text-2xl font-bold leading-snug text-[#1A1A2E] font-heading line-clamp-2">Title</h2>
-      <p className="mt-2 text-[15px] leading-relaxed text-[#7C8590] line-clamp-3">Summary</p>
-      {/* Meta row: @creator · date + TagPills (max 5) */}
-    </div>
-  </div>
-</article>
-```
-
-### Sidebar Filter Panel (Desktop)
-
-White card with grouped filter sections. Visible only on `lg:` breakpoint.
-
-```tsx
-<div className="rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]
-  dark:bg-[#1E241E] dark:shadow-none">
-  <div className="flex items-center gap-2 text-sm font-semibold text-[#1A1A2E] mb-4">
-    <Filter className="h-4 w-4 text-[#A0A8B0]" />
-    Filters
-  </div>
-  <button className="w-full text-left rounded-xl px-3 py-2 text-sm font-medium
-    bg-[#2D2D3F] text-white  /* active state */
-    text-[#64748B] hover:bg-[#E2E8E0]  /* inactive state */
-  ">All Tips</button>
-  {/* Section: TOOLS (Wrench icon), ROLES (Users icon), WORKFLOWS (Zap icon) */}
-  {/* Section headers: text-xs font-semibold uppercase tracking-wider text-[#A0A8B0] */}
-</div>
-```
-
-Active state: `bg-[#2D2D3F] text-white` (dark mode: `bg-[#EDF2EC] text-[#161B16]`).
-Inactive state: `text-[#64748B] hover:bg-[#E2E8E0]`.
-
-### Filter Chips (Mobile)
-
-Horizontal scrollable bar, sticky below header. Same active/inactive logic.
-
-```tsx
-<div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide
-  [mask-image:linear-gradient(to_right,black_calc(100%-40px),transparent)]">
-  <button className="rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap
-    bg-[#2D2D3F] text-white  /* active */
-    bg-white text-[#64748B] hover:bg-[#F5F5F0]  /* inactive */
-  ">All</button>
-</div>
-```
-
-### Code Blocks
-
-Dark background regardless of site theme:
-
-```css
-.code-block {
-  background: #1A1A2E;       /* matches text-primary, warm dark */
-  border-radius: 12px;       /* rounded-xl */
-  padding: 20px 24px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #E8EDE6;
-  overflow-x: auto;
-}
-```
-
-Inline code: `bg-[#E2E8E0] text-[#1A1A2E] px-1.5 py-0.5 rounded-lg text-[15px] font-mono` (dark: `bg-[#2A322A] text-[#EDF2EC]`).
-
-### Callout / Blockquote
-
-Mint-colored with rounded-xl corners:
-
-```tsx
-<blockquote className="my-6 rounded-xl border-l-4 border-[#8ECDA0] bg-[#EDF5EF] p-4
-  dark:bg-[#1A3327]/50 dark:border-[#8ECDA0]">
-  <p className="text-sm font-medium text-[#2D6B45] dark:text-[#8ECDA0]">
-    Tip content here
-  </p>
-</blockquote>
-```
-
-### Source Attribution Card
-
-White card, rounded-2xl, shadow. Links in warm purple.
-
-```tsx
-<div className="rounded-2xl bg-white p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)]
-  dark:bg-[#1E241E] dark:shadow-[0_2px_12px_rgba(0,0,0,0.2)]">
-  <p className="text-sm text-[#7C8590]">by @creator on YouTube</p>
-  <a className="mt-3 inline-flex items-center gap-1 text-sm font-medium
-    text-[#6B47A8] hover:text-[#5B3D99]
-    dark:text-[#C5B3E6] dark:hover:text-[#D4C8F0]">
-    View Original →
-  </a>
-</div>
-```
-
-### Skeleton Loading States
-
-Use sage-tinted placeholders on white card:
-
-```tsx
-<div className="animate-pulse rounded-2xl bg-white p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
-  <div className="h-3 w-24 rounded-lg bg-[#E2E8E0] mb-3" />
-  <div className="h-5 w-3/4 rounded-lg bg-[#E2E8E0] mb-2" />
-  <div className="h-5 w-1/2 rounded-lg bg-[#E2E8E0] mb-4" />
-  <div className="h-4 w-full rounded-lg bg-[#E2E8E0] mb-2" />
-  <div className="h-4 w-5/6 rounded-lg bg-[#E2E8E0]" />
-</div>
-```
+Separated by a top border line. No card wrapper. Clean text + link.
 
 ## Interaction Patterns
 
 | Pattern | Implementation |
 |---------|---------------|
-| Feed loading | "Load more" button (not pagination). Infinite scroll is acceptable alternative. |
-| Card hover | `hover:-translate-y-0.5` + increased shadow (`0_6px_20px`). Transition duration: 200ms |
-| Featured card hover | Shadow increases to `0_8px_24px`. No translate. |
-| Dark mode toggle | `prefers-color-scheme` auto-detect + manual toggle. Preference in localStorage |
-| Focus states | `focus-visible:ring-2 ring-[#2D2D3F] ring-offset-2` on all interactive elements |
-| Filter active | Dark charcoal bg + white text. Transition: 150ms colors. |
-
-## Accessibility
-
-- Minimum **4.5:1 contrast ratio** (WCAG AA) on all text
-- All interactive elements must have visible focus states
-- Tag colors are supplemented by text labels (don't rely on color alone)
-- Images (if any) require alt text
-- Filter state changes announced via `aria-live` region
-- Semantic HTML: `<article>` for cards, `<nav>` for filters, `<main>` for content
+| Card hover (regular) | `hover:-translate-y-0.5` + shadow appear. Duration: 300ms ease-out |
+| Card hover (featured) | Shadow intensifies. No translate. |
+| Filter active (sidebar) | `bg-[#dde4db] font-semibold text-[#1A1A2E]` |
+| Filter active (chips) | `bg-[#1A1A2E] text-[#fafcfa]` |
+| Links | Purple (`#6B47A8`) with underline, offset-2, decoration fades in |
+| Focus states | `focus-visible:ring-2 ring-[#1A1A2E] ring-offset-2` |
 
 ## Design Principles (Tiebreakers)
 
-When in doubt about a design decision, use these ranked principles:
-
-1. **Warm over cold** — sage, pink, lavender, mint. Never cold gray or saturated blue.
-2. **Readability first** — if it hurts readability, don't do it
-3. **Shadows over borders** — cards float with soft shadows in light mode, no visible borders
-4. **Generous rounding** — minimum rounded-lg, prefer rounded-xl and rounded-2xl
-5. **Whitespace over decoration** — separate with space, not borders or dividers
-6. **Color means something** — every color encodes tag category, status, or interactivity
-7. **Consistent over clever** — follow the system, don't invent one-off styles
+1. **Editorial over dashboard** — this is a reading experience, not a SaaS app
+2. **Typography carries the design** — Bricolage + Source Serif do the heavy lifting
+3. **Warm over cold** — sage, earth, muted tones. Never cold gray or saturated blue
+4. **Readability first** — if it hurts readability, don't do it
+5. **Tinted surfaces over bordered boxes** — cards use background tints, not borders
+6. **Whitespace over decoration** — separate with space, not borders or dividers
+7. **Variety over repetition** — break up identical patterns
 8. **Content over chrome** — the tip content is the star, UI stays out of the way
