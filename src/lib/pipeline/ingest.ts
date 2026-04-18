@@ -46,6 +46,26 @@ const EXTRACTION_TOOL = {
         description:
           'Workflow types covered. Examples: "coding", "writing", "automation", "research", "debugging", "design", "testing"',
       },
+      tags_domain: {
+        type: "array",
+        items: { type: "string" },
+        description:
+          'Technical domain areas this content applies to. Use lowercase_snake_case. Examples: "frontend", "backend", "devops", "ci_cd", "mobile", "data_engineering", "machine_learning", "infrastructure", "databases", "api_design", "security_engineering"',
+      },
+      tags_category: {
+        type: "string",
+        enum: [
+          "code_and_editing",
+          "workflow_and_automation",
+          "debugging_and_testing",
+          "prompting_and_context",
+          "tools_and_updates",
+          "architecture_and_data",
+          "learning_and_practices",
+        ],
+        description:
+          "Primary intent category. code_and_editing = AI-assisted coding/refactoring/review. workflow_and_automation = agents/pipelines/orchestration. debugging_and_testing = AI debugging/test generation. prompting_and_context = prompt engineering/context management. tools_and_updates = new releases/model news. architecture_and_data = system design/data pipelines. learning_and_practices = guides/best practices/tutorials.",
+      },
       quality_signal: {
         type: "string",
         enum: ["high", "medium", "low"],
@@ -64,6 +84,7 @@ const EXTRACTION_TOOL = {
       "tags_tool",
       "tags_focus",
       "tags_workflow",
+      "tags_domain",
       "quality_signal",
       "source_creator",
     ],
@@ -72,7 +93,7 @@ const EXTRACTION_TOOL = {
 
 const EXTRACTION_SYSTEM_PROMPT = `You are an AI workflow content analyst for TipStack, a platform that curates actionable AI workflow tips.
 
-Your job is to extract structured, actionable insights from raw content (YouTube transcripts or Reddit posts) about AI tools and workflows.
+Your job is to extract structured, actionable insights from raw content (YouTube transcripts, Reddit posts, or tweets/threads) about AI tools and workflows.
 
 ## What makes a good extraction:
 

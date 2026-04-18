@@ -42,6 +42,12 @@ const SYNTHESIS_TOOL = {
               description:
                 "Full content in markdown. Detailed breakdown with steps, code examples if relevant, and practical guidance. Use ## headings, bullet points, and bold for scannability.",
             },
+            content_type: {
+              type: "string",
+              enum: ["quick_tip", "deep_dive", "roundup", "update"],
+              description:
+                "Content format: quick_tip = one focused technique (1-2 paragraphs), deep_dive = thorough walkthrough (300-800 words), roundup = collection of related tips (numbered list), update = tool news or model release info",
+            },
             tags_tool: {
               type: "array",
               items: { type: "string" },
@@ -56,6 +62,25 @@ const SYNTHESIS_TOOL = {
               type: "array",
               items: { type: "string" },
               description: "Workflow types covered",
+            },
+            tags_domain: {
+              type: "array",
+              items: { type: "string" },
+              description: 'Technical domain areas (e.g. "frontend", "backend", "devops", "ci_cd", "databases", "api_design")',
+            },
+            tags_category: {
+              type: "string",
+              enum: [
+                "code_and_editing",
+                "workflow_and_automation",
+                "debugging_and_testing",
+                "prompting_and_context",
+                "tools_and_updates",
+                "architecture_and_data",
+                "learning_and_practices",
+              ],
+              description:
+                "Primary intent category. code_and_editing = AI-assisted coding/refactoring/review. workflow_and_automation = agents/pipelines/orchestration. debugging_and_testing = AI debugging/test generation. prompting_and_context = prompt engineering/context management. tools_and_updates = new releases/model news. architecture_and_data = system design/data pipelines. learning_and_practices = guides/best practices/tutorials.",
             },
             source_items: {
               type: "array",
@@ -86,9 +111,12 @@ const SYNTHESIS_TOOL = {
             "slug",
             "summary",
             "body",
+            "content_type",
             "tags_tool",
             "tags_focus",
             "tags_workflow",
+            "tags_domain",
+            "tags_category",
             "source_items",
             "source_urls",
           ],
@@ -202,7 +230,7 @@ Title: ${extract.title}
 Summary: ${extract.summary}
 Tips:
 ${extract.tips.map((t) => `- ${t}`).join("\n")}
-Tags: tool=[${extract.tags_tool.join(", ")}] focus=[${extract.tags_focus.join(", ")}] workflow=[${extract.tags_workflow.join(", ")}]`;
+Tags: tool=[${extract.tags_tool.join(", ")}] focus=[${extract.tags_focus.join(", ")}] workflow=[${extract.tags_workflow.join(", ")}] domain=[${(extract.tags_domain ?? []).join(", ")}]`;
     })
     .join("\n\n");
 
@@ -243,9 +271,12 @@ ${itemDescriptions}`,
       slug: uniqueSlug,
       summary: piece.summary,
       body: piece.body,
+      contentType: piece.content_type ?? "deep_dive",
       tagsTool: piece.tags_tool,
       tagsFocus: piece.tags_focus,
       tagsWorkflow: piece.tags_workflow,
+      tagsDomain: piece.tags_domain ?? [],
+      tagsCategory: piece.tags_category ?? "learning_and_practices",
       sourceUrls: piece.source_urls,
     });
 

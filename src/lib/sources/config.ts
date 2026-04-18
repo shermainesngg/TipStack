@@ -1,27 +1,40 @@
-import type { YouTubeChannel, SubredditConfig } from "@/types";
+import type { YouTubeChannel, SubredditConfig, TwitterAccountConfig } from "@/types";
 
 export const YOUTUBE_CHANNELS: YouTubeChannel[] = [
   {
     name: "Cole Medin",
-    channelId: "UCMHXfTnMpSGrrOBhkDQp1mA",
+    channelId: "UCMwVTLZIRRUyyVrkjDpn4pA",
     handle: "@ColeMedin",
   },
   {
     name: "Nate Herk",
-    channelId: "UCQMRkSZMNsO0K3P28x1N5Xg",
+    channelId: "UC2ojq-nuP8ceeHqiroeKhBA",
     handle: "@NateHerk",
   },
   {
     name: "Chase Hannegan",
-    channelId: "UCh1EQFPJ2XeLA2YSiBUfNBA",
+    channelId: "UCoy6cTJ7Tg0dqS-DI-_REsA",
     handle: "@Chase-H-AI",
   },
   {
     name: "Simon Scrapes",
-    channelId: "UCFF7K7kxCPITgQwk4MnPGYA",
+    channelId: "UCdCR4-uYOg5ju-IUuDnfnQA",
     handle: "@simonscrapes",
   },
 ];
+
+/** Evergreen queries that always run regardless of Reddit trends */
+export const YOUTUBE_EVERGREEN_QUERIES = [
+  "AI coding workflow",
+  "AI automation workflow",
+  "AI agents tutorial",
+];
+
+/** Max results per search query (each search costs 100 quota units) */
+export const YOUTUBE_SEARCH_RESULTS_PER_QUERY = 5;
+
+/** Minimum view count to consider a discovered video worth processing */
+export const YOUTUBE_SEARCH_MIN_VIEWS = 1000;
 
 export const SUBREDDITS: SubredditConfig[] = [
   // Tier 1 — MVP
@@ -30,12 +43,20 @@ export const SUBREDDITS: SubredditConfig[] = [
   { name: "ChatGPTCoding", tier: 1 },
   { name: "cursor", tier: 1 },
   { name: "LocalLLaMA", tier: 1 },
+  { name: "AI_Agents", tier: 1 },
+  { name: "vibecoding", tier: 1 },
   // Tier 2 — Post-MVP
+  { name: "LLMDevs", tier: 2 },
+  { name: "LangChain", tier: 2 },
   { name: "PromptEngineering", tier: 2 },
   { name: "OpenAI", tier: 2 },
   { name: "aipromptprogramming", tier: 2 },
   { name: "n8n", tier: 2 },
-  { name: "AIAssisted", tier: 2 },
+  { name: "ollama", tier: 2 },
+  { name: "githubcopilot", tier: 2 },
+  { name: "Codeium", tier: 2 },
+  { name: "perplexity_ai", tier: 2 },
+  { name: "MLOps", tier: 2 },
 ];
 
 /** Only tier-1 subreddits for MVP */
@@ -49,3 +70,45 @@ export const REDDIT_POSTS_PER_SUB = 10;
 
 /** Number of recent videos to fetch per YouTube channel */
 export const YOUTUBE_VIDEOS_PER_CHANNEL = 5;
+
+// ─── Twitter / X ──────────────────────────────────────────────────────────────
+
+export const TWITTER_ACCOUNTS: TwitterAccountConfig[] = [
+  // Tier 1 — official tool accounts (release announcements, feature tips)
+  { handle: "AnthropicAI", name: "Anthropic", tier: 1 },
+  { handle: "OpenAI", name: "OpenAI", tier: 1 },
+  { handle: "cursor_ai", name: "Cursor", tier: 1 },
+  { handle: "LangChainAI", name: "LangChain", tier: 1 },
+  { handle: "naboringn8n", name: "n8n", tier: 1 },
+  // Tier 1 — practitioners who share actionable workflows
+  { handle: "mcaborkadam", name: "McKay Wrigley", tier: 1 },
+  { handle: "swyx", name: "swyx", tier: 1 },
+  { handle: "simonw", name: "Simon Willison", tier: 1 },
+  // Tier 2 — broader AI ecosystem
+  { handle: "GoogleDeepMind", name: "Google DeepMind", tier: 2 },
+  { handle: "huggingface", name: "Hugging Face", tier: 2 },
+  { handle: "replaborit", name: "Replit", tier: 2 },
+];
+
+export const MVP_TWITTER_ACCOUNTS = TWITTER_ACCOUNTS.filter((a) => a.tier === 1);
+
+/** Max tweets to fetch per account */
+export const TWITTER_TWEETS_PER_ACCOUNT = 20;
+
+/** Minimum likes for a tweet to be worth processing */
+export const TWITTER_MIN_LIKES = 10;
+
+/** Search queries for discovering tweets beyond followed accounts */
+export const TWITTER_SEARCH_QUERIES = [
+  "AI coding workflow tip",
+  "Claude Code tip",
+  "cursor AI tip",
+  "AI agent workflow",
+  "vibe coding",
+];
+
+/** Max search results per query */
+export const TWITTER_SEARCH_RESULTS_PER_QUERY = 20;
+
+/** Minimum likes for search-discovered tweets */
+export const TWITTER_SEARCH_MIN_LIKES = 25;

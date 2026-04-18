@@ -1,0 +1,1 @@
+ALTER TABLE content ADD COLUMN tags_domain TEXT[] NOT NULL DEFAULT '{}';

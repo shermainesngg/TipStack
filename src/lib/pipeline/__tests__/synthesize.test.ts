@@ -39,6 +39,7 @@ function makeFilteredItem(
       tags_tool: ["claude_code"],
       tags_focus: ["prompt_engineering"],
       tags_workflow: ["coding"],
+      tags_domain: ["frontend"],
       quality_signal: "high",
       source_creator: "Test Creator",
       ...overrides,
@@ -71,6 +72,8 @@ function mockClaudeSynthesis(
             tags_tool: ["claude_code"],
             tags_focus: ["prompt_engineering"],
             tags_workflow: ["coding"],
+            tags_domain: ["frontend"],
+            content_type: "deep_dive",
             source_items: p.source_items,
             source_urls: p.source_items.map((id) => ({
               url: `https://youtube.com/watch?v=${id}`,

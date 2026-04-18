@@ -105,9 +105,12 @@ export async function insertContent(params: {
   slug: string;
   summary: string;
   body: string;
+  contentType: string;
   tagsTool: string[];
   tagsFocus: string[];
   tagsWorkflow: string[];
+  tagsDomain: string[];
+  tagsCategory: string;
   sourceUrls: SourceUrl[];
 }): Promise<string> {
   const { data, error } = await getServiceClient()
@@ -117,10 +120,13 @@ export async function insertContent(params: {
       slug: params.slug,
       summary: params.summary,
       body: params.body,
+      content_type: params.contentType,
       status: "pending_review",
       tags_tool: params.tagsTool,
       tags_focus: params.tagsFocus,
       tags_workflow: params.tagsWorkflow,
+      tags_domain: params.tagsDomain,
+      tags_category: params.tagsCategory,
       source_urls: params.sourceUrls,
     })
     .select("id")
@@ -153,6 +159,7 @@ export async function getPublishedContentByTags(
   tagsTool: string[],
   tagsFocus: string[],
   tagsWorkflow: string[],
+  tagsDomain: string[],
   limit = 20,
   offset = 0
 ): Promise<Content[]> {
@@ -172,6 +179,9 @@ export async function getPublishedContentByTags(
   if (tagsWorkflow.length > 0) {
     query = query.overlaps("tags_workflow", tagsWorkflow);
   }
+  if (tagsDomain.length > 0) {
+    query = query.overlaps("tags_domain", tagsDomain);
+  }
 
   const { data, error } = await query;
   if (error) throw new Error(`Failed to fetch filtered content: ${error.message}`);
@@ -183,10 +193,11 @@ export async function getAvailableTags(): Promise<{
   tools: string[];
   focuses: string[];
   workflows: string[];
+  domains: string[];
 }> {
   const { data, error } = await getReadClient()
     .from("content")
-    .select("tags_tool, tags_focus, tags_workflow")
+    .select("tags_tool, tags_focus, tags_workflow, tags_domain")
     .eq("status", "published");
 
   if (error) throw new Error(`Failed to fetch tags: ${error.message}`);
@@ -194,17 +205,20 @@ export async function getAvailableTags(): Promise<{
   const tools = new Set<string>();
   const focuses = new Set<string>();
   const workflows = new Set<string>();
+  const domains = new Set<string>();
 
   for (const row of data) {
     (row.tags_tool as string[]).forEach((t) => tools.add(t));
     (row.tags_focus as string[]).forEach((t) => focuses.add(t));
     (row.tags_workflow as string[]).forEach((t) => workflows.add(t));
+    (row.tags_domain as string[]).forEach((t) => domains.add(t));
   }
 
   return {
     tools: [...tools].sort(),
     focuses: [...focuses].sort(),
     workflows: [...workflows].sort(),
+    domains: [...domains].sort(),
   };
 }
 
@@ -223,4 +237,86 @@ export async function getContentBySlug(
     throw new Error(`Failed to fetch content: ${error.message}`);
   }
   return (data as Content) ?? null;
+}
+
+/** Fetch published content filtered by a single domain */
+export async function getPublishedContentByDomain(
+  domain: string,
+  limit = 40,
+  offset = 0
+): Promise<Content[]> {
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("*")
+    .eq("status", "published")
+    .overlaps("tags_domain", [domain])
+    .order("published_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error) throw new Error(`Failed to fetch domain content: ${error.message}`);
+  return data as Content[];
+}
+
+// ─── category queries ─────────────────────────────────────────────────────
+
+/** Fetch published content by intent-based category */
+export async function getPublishedContentByCategory(
+  category: string,
+  limit = 40,
+  offset = 0
+): Promise<Content[]> {
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("*")
+    .eq("status", "published")
+    .eq("tags_category", category)
+    .order("published_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (error)
+    throw new Error(`Failed to fetch category content: ${error.message}`);
+  return data as Content[];
+}
+
+/** Fetch published content by category with optional domain filter */
+export async function getPublishedContentByCategoryAndDomain(
+  category: string,
+  domain: string | null,
+  limit = 40,
+  offset = 0
+): Promise<Content[]> {
+  let query = getReadClient()
+    .from("content")
+    .select("*")
+    .eq("status", "published")
+    .eq("tags_category", category)
+    .order("published_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+
+  if (domain) {
+    query = query.overlaps("tags_domain", [domain]);
+  }
+
+  const { data, error } = await query;
+  if (error)
+    throw new Error(`Failed to fetch category+domain content: ${error.message}`);
+  return data as Content[];
+}
+
+/** Fetch content counts per category for the home page */
+export async function getCategoryCounts(): Promise<Record<string, number>> {
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("tags_category")
+    .eq("status", "published");
+
+  if (error)
+    throw new Error(`Failed to fetch category counts: ${error.message}`);
+
+  const counts: Record<string, number> = {};
+  for (const row of data) {
+    const cat = row.tags_category as string;
+    counts[cat] = (counts[cat] ?? 0) + 1;
+  }
+  return counts;
 }

@@ -40,6 +40,7 @@ function makeRawContent(
       tags_tool: ["claude_code"],
       tags_focus: ["prompt_engineering"],
       tags_workflow: ["coding"],
+      tags_domain: ["frontend"],
       quality_signal: "high",
       source_creator: "Test Creator",
       ...overrides,

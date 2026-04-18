@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts output
+scripts/data/
+
+# supabase temp
+supabase/.temp/
