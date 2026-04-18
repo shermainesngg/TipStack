@@ -1,0 +1,92 @@
+import Link from "next/link";
+import { cacheTag, cacheLife } from "next/cache";
+import { getAllCategoryConfigs } from "@/lib/categories";
+import { getCategoryCounts } from "@/lib/supabase/queries";
+import {
+  Code2,
+  Workflow,
+  Bug,
+  MessageSquareCode,
+  Sparkles,
+  Layers,
+  BookOpen,
+} from "lucide-react";
+
+const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
+  Code2,
+  Workflow,
+  Bug,
+  MessageSquareCode,
+  Sparkles,
+  Layers,
+  BookOpen,
+};
+
+async function getCounts() {
+  "use cache";
+  cacheTag("content");
+  cacheLife("hours");
+
+  return getCategoryCounts();
+}
+
+export async function CategoryShowcase() {
+  let counts: Record<string, number> = {};
+  try {
+    counts = await getCounts();
+  } catch {
+    // Supabase not configured
+  }
+
+  const configs = getAllCategoryConfigs();
+  const totalTips = Object.values(counts).reduce((a, b) => a + b, 0);
+
+  if (totalTips === 0) return null;
+
+  return (
+    <div className="mx-auto max-w-[1200px] px-5 py-8">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9B9B8E] mb-4">
+        Browse by category
+      </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+        {configs.map((config) => {
+          const count = counts[config.slug] ?? 0;
+          const Icon = ICON_MAP[config.icon];
+
+          return (
+            <Link
+              key={config.slug}
+              href={`/categories/${config.slug}`}
+              className={`group rounded-2xl p-5 ${config.tint} ${config.darkTint}
+                hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]
+                transition-all duration-300 ease-out`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                {Icon && (
+                  <Icon className={`size-4 ${config.accent}`} />
+                )}
+                <h3
+                  className={`font-heading font-semibold text-[15px] ${config.accent}`}
+                >
+                  {config.label}
+                </h3>
+              </div>
+              <p className="text-[13px] leading-[1.5] text-[#5A5A6E] dark:text-[#A8B0A6] line-clamp-2">
+                {config.description}
+              </p>
+              {count > 0 && (
+                <p className="mt-3 text-[12px] text-[#9B9B8E]">
+                  <span className="font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-0.5">
+                    {count}
+                  </span>
+                  {count === 1 ? "tip" : "tips"}
+                </p>
+              )}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

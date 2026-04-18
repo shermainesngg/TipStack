@@ -7,6 +7,7 @@ import {
 } from "@/lib/supabase/queries";
 import { AnimatedFeed } from "@/components/animated-feed";
 import { TagFilter } from "@/components/tag-filter";
+import { CategoryShowcase } from "@/components/category-showcase";
 
 async function getContent(tag: string | undefined) {
   "use cache";
@@ -14,7 +15,7 @@ async function getContent(tag: string | undefined) {
   cacheLife("hours");
 
   if (tag) {
-    return getPublishedContentByTags([tag], [tag], [tag]);
+    return getPublishedContentByTags([tag], [tag], [tag], [tag]);
   }
   return getPublishedContent();
 }
@@ -39,6 +40,7 @@ export default async function FeedPage({
     tools: [],
     focuses: [],
     workflows: [],
+    domains: [],
   };
 
   try {
@@ -54,7 +56,6 @@ export default async function FeedPage({
 
   return (
     <div>
-      {/* Hero — left-aligned, asymmetric, typographic */}
       <div className="mx-auto max-w-[1200px] px-5 pt-12 pb-2 lg:pt-20 lg:pb-6">
         <h1
           className="font-heading font-extrabold tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] max-w-[14ch] leading-[1.05]"
@@ -67,7 +68,6 @@ export default async function FeedPage({
           signal, not noise.
         </p>
 
-        {/* Stat line — inline text, not cards-within-cards */}
         <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-[14px] tracking-wide">
           <span className="text-[#8B6E4E]">
             <span className="text-[20px] font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-1">
@@ -90,10 +90,12 @@ export default async function FeedPage({
         </div>
       </div>
 
-      {/* Main Content Area */}
+      <Suspense>
+        <CategoryShowcase />
+      </Suspense>
+
       <div className="mx-auto max-w-[1200px] px-5 py-8">
         <div className="flex gap-10">
-          {/* Sidebar Filters (desktop) */}
           <aside className="hidden lg:block w-[200px] shrink-0">
             <div className="sticky top-20">
               <Suspense>
@@ -107,9 +109,7 @@ export default async function FeedPage({
             </div>
           </aside>
 
-          {/* Content Column */}
           <div className="min-w-0 flex-1">
-            {/* Mobile filter chips */}
             <div className="lg:hidden sticky top-16 z-30 -mx-5 bg-[#EDF2EC]/80 px-5 py-3 backdrop-blur-sm dark:bg-[#161B16]/80 mb-8">
               <Suspense>
                 <TagFilter

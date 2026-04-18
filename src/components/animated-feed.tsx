@@ -36,6 +36,17 @@ const tapSpring = {
   transition: { type: "spring" as const, stiffness: 400, damping: 25 },
 };
 
+function getSpanClass(content: Content, index: number, total: number): string {
+  const type = content.content_type ?? "deep_dive";
+
+  if (type === "roundup") return "md:col-span-2";
+  if (type === "update") return "md:col-span-2";
+  if (type === "quick_tip") return "md:col-span-1";
+
+  if (index === 0 && total >= 3) return "md:col-span-2 lg:col-span-1";
+  return "";
+}
+
 export function AnimatedFeed({
   featured,
   rest,
@@ -64,13 +75,13 @@ export function AnimatedFeed({
           {rest.map((item, i) => (
             <motion.div
               key={item.id}
-              className={
-                i === 0 && rest.length >= 3
-                  ? "md:col-span-2 lg:col-span-1"
-                  : ""
-              }
+              className={getSpanClass(item, i, rest.length)}
               variants={itemVariants}
-              whileHover={hoverSpring}
+              whileHover={
+                (item.content_type ?? "deep_dive") === "quick_tip"
+                  ? undefined
+                  : hoverSpring
+              }
               whileTap={tapSpring}
             >
               <ContentCard content={item} />

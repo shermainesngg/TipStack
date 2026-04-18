@@ -98,6 +98,7 @@ Muted, sophisticated tints — not bright candy pastels:
 | **Tool** | `#f0dbd8` | `#8B4A4A` | `#3D2424` | `#E5A097` |
 | **Focus** | `#e0d8ef` | `#5E3F96` | `#2A1F3D` | `#B89DD4` |
 | **Workflow** | `#d2e8d6` | `#2D6040` | `#1A3327` | `#7EBE8E` |
+| **Domain** | `#f0e8d4` | `#7B6230` | `#2E2818` | `#D4B875` |
 
 Tag pill styling: `text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide`. No border. Rounded-md, not rounded-full.
 

@@ -1,6 +1,7 @@
 import { inngest } from "./client";
 import { fetchYouTubeItems } from "@/lib/sources/youtube";
 import { fetchRedditItems } from "@/lib/sources/reddit";
+import { fetchTwitterItems } from "@/lib/sources/twitter";
 import { ingestItem } from "@/lib/pipeline/ingest";
 import { dedupAndFilter } from "@/lib/pipeline/dedup";
 import { synthesize } from "@/lib/pipeline/synthesize";
@@ -14,7 +15,7 @@ import type { FetchedItem } from "@/types";
  * stays under Vercel Hobby's 10-second function timeout.
  *
  * Flow:
- *   1. Fetch all new YouTube + Reddit items (one step each)
+ *   1. Fetch all new YouTube + Reddit + Twitter items (one step each)
  *   2. Extract structured data from each item via Claude (one step per item)
  *   3. Dedup + quality filter the batch (single batch Claude call)
  *   4. Synthesize filtered items into publishable content (single batch Claude call)
@@ -39,7 +40,11 @@ export const pipelineFunction = inngest.createFunction(
       return fetchRedditItems();
     });
 
-    const allItems: FetchedItem[] = [...youtubeItems, ...redditItems];
+    const twitterItems = await step.run("fetch-twitter", async () => {
+      return fetchTwitterItems();
+    });
+
+    const allItems: FetchedItem[] = [...youtubeItems, ...redditItems, ...twitterItems];
 
     if (allItems.length === 0) {
       await step.run("notify-empty", async () => {

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import {
   Bricolage_Grotesque,
   Source_Serif_4,
   JetBrains_Mono,
 } from "next/font/google";
 import Link from "next/link";
+import { CategoryNav } from "@/components/category-nav";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -49,6 +51,9 @@ export default function RootLayout({
             >
               TipStack
             </Link>
+            <Suspense>
+              <CategoryNav />
+            </Suspense>
           </div>
         </header>
         <main className="flex-1">{children}</main>

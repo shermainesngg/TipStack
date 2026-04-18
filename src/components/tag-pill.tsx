@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-type TagCategory = "tool" | "focus" | "workflow";
+type TagCategory = "tool" | "focus" | "workflow" | "domain";
 
 const TAG_STYLES: Record<
   TagCategory,
@@ -23,6 +23,12 @@ const TAG_STYLES: Record<
     text: "text-[#2D6040]",
     darkBg: "dark:bg-[#1A3327]",
     darkText: "dark:text-[#7EBE8E]",
+  },
+  domain: {
+    bg: "bg-[#f0e8d4]",
+    text: "text-[#7B6230]",
+    darkBg: "dark:bg-[#2E2818]",
+    darkText: "dark:text-[#D4B875]",
   },
 };
 
