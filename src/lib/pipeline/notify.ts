@@ -1,7 +1,5 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface PipelineNotification {
   batchDate: string;
   itemsFetched: number;
@@ -18,9 +16,10 @@ interface PipelineNotification {
 export async function notifyPipelineComplete(
   stats: PipelineNotification
 ): Promise<void> {
+  const apiKey = process.env.RESEND_API_KEY;
   const adminEmail = process.env.ADMIN_EMAIL;
-  if (!adminEmail) {
-    console.warn("ADMIN_EMAIL not set — skipping pipeline notification");
+  if (!apiKey || !adminEmail) {
+    console.warn("RESEND_API_KEY or ADMIN_EMAIL not set — skipping pipeline notification");
     return;
   }
 
@@ -45,6 +44,7 @@ ${
     : "No new content was generated this run. This could mean all items were duplicates or below the quality threshold."
 }`;
 
+  const resend = new Resend(apiKey);
   await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL || "TipStack <onboarding@resend.dev>",
     to: adminEmail,
