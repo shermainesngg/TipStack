@@ -51,22 +51,22 @@ const SYNTHESIS_TOOL = {
             tags_tool: {
               type: "array",
               items: { type: "string" },
-              description: "AI tools covered in this piece (lowercase_snake_case)",
+              description: 'AI tool products covered (lowercase_snake_case). Use canonical names: "claude_code", "cursor", "copilot", "chatgpt", "windsurf", "v0", "bolt", "n8n". No company names or generic terms.',
             },
             tags_focus: {
               type: "array",
               items: { type: "string" },
-              description: "Cross-cutting focus areas this piece addresses (e.g. security, prompt_engineering, cost_optimization)",
+              description: 'Cross-cutting focus areas. Prefer canonical values: "prompt_engineering", "context_management", "system_prompts", "cost_optimization", "security", "model_updates", "model_comparisons", "benchmarks", "best_practices". Add others only when none fit.',
             },
             tags_workflow: {
               type: "array",
               items: { type: "string" },
-              description: "Workflow types covered",
+              description: 'Work activity this content helps with. Prefer canonical values: "code-generation", "coding", "refactoring", "code-review", "automation", "pipeline", "agents", "debugging", "testing", "error-handling", "research", "tutorial", "team-workflow", "design", "content-curation". Add others only when none fit.',
             },
             tags_domain: {
               type: "array",
               items: { type: "string" },
-              description: 'Technical domain areas (e.g. "frontend", "backend", "devops", "ci_cd", "databases", "api_design")',
+              description: 'Technical domain areas. Prefer canonical values: "frontend", "backend", "devops", "ci_cd", "databases", "api_design", "data_engineering", "system_design". Add others only when none fit.',
             },
             tags_category: {
               type: "string",

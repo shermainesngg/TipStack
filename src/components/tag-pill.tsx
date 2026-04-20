@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { toolDisplayName } from "@/lib/tools";
 
 type TagCategory = "tool" | "focus" | "workflow" | "domain";
 
@@ -58,7 +59,7 @@ export function TagPill({
         className
       )}
     >
-      {formatLabel(label)}
+      {category === "tool" ? toolDisplayName(label) : formatLabel(label)}
     </span>
   );
 }

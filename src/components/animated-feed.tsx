@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { ContentCard } from "./content-card";
-import type { Content } from "@/types";
+import type { ContentSummary } from "@/types";
 
 const containerVariants = {
   hidden: {},
@@ -36,7 +36,7 @@ const tapSpring = {
   transition: { type: "spring" as const, stiffness: 400, damping: 25 },
 };
 
-function getSpanClass(content: Content, index: number, total: number): string {
+function getSpanClass(content: ContentSummary, index: number, total: number): string {
   const type = content.content_type ?? "deep_dive";
 
   if (type === "roundup") return "md:col-span-2";
@@ -51,8 +51,8 @@ export function AnimatedFeed({
   featured,
   rest,
 }: {
-  featured: Content | undefined;
-  rest: Content[];
+  featured: ContentSummary | undefined;
+  rest: ContentSummary[];
 }) {
   return (
     <motion.div

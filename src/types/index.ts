@@ -4,7 +4,7 @@ export type ContentStatus = "pending_review" | "published" | "rejected";
 
 export type RawContentStatus = "ingested" | "filtered" | "merged" | "discarded";
 
-export type Platform = "youtube" | "reddit" | "twitter";
+export type Platform = "youtube" | "reddit" | "twitter" | "news";
 
 export type ContentType = "quick_tip" | "deep_dive" | "roundup" | "update";
 
@@ -34,6 +34,8 @@ export interface Content {
   created_at: string;
   published_at: string | null;
 }
+
+export type ContentSummary = Omit<Content, "body">;
 
 export interface RawContent {
   id: string;

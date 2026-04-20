@@ -304,7 +304,7 @@ The Claude API response headers include token counts. Log `input_tokens` and `ou
 
 If you already have an n8n instance and a Claude API key, you can have a minimal ingest-and-summarize pipeline running in under an hour. Start with a single RSS feed, get the prompt right, then expand to more sources.',
  'published',
- ARRAY['n8n', 'claude'],
+ ARRAY['n8n', 'claude_code'],
  ARRAY['cost_optimization'],
  ARRAY['automation'],
  '[
@@ -463,7 +463,7 @@ Generate a timed agenda with discussion prompts for each section.
 
 ChatGPT Pro does not replace the PM''s judgment, domain knowledge, or stakeholder relationships. What it does replace is the blank-page problem. Starting from a solid draft instead of a blinking cursor can save two to three hours per week — time better spent talking to customers or refining strategy.',
  'published',
- ARRAY['gpt'],
+ ARRAY['chatgpt'],
  ARRAY['governance'],
  ARRAY['writing'],
  '[

@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { cacheTag, cacheLife } from "next/cache";
-import { getAllCategoryConfigs } from "@/lib/categories";
-import { getCategoryCounts } from "@/lib/supabase/queries";
+import { getAllCategoryConfigs, getCategoryFilters } from "@/lib/categories";
+import {
+  getCategoryToolsAndFreshness,
+  type CategoryMeta,
+} from "@/lib/supabase/queries";
 import {
   Code2,
   Workflow,
@@ -22,26 +25,26 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   BookOpen,
 };
 
-async function getCounts() {
+async function getMeta() {
   "use cache";
   cacheTag("content");
   cacheLife("hours");
 
-  return getCategoryCounts();
+  return getCategoryToolsAndFreshness();
 }
 
 export async function CategoryShowcase() {
-  let counts: Record<string, number> = {};
+  let meta: Record<string, CategoryMeta> = {};
   try {
-    counts = await getCounts();
+    meta = await getMeta();
   } catch {
     // Supabase not configured
   }
 
   const configs = getAllCategoryConfigs();
-  const totalTips = Object.values(counts).reduce((a, b) => a + b, 0);
+  const hasContent = Object.keys(meta).length > 0;
 
-  if (totalTips === 0) return null;
+  if (!hasContent) return null;
 
   return (
     <div className="mx-auto max-w-[1200px] px-5 py-8">
@@ -51,7 +54,8 @@ export async function CategoryShowcase() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {configs.map((config) => {
-          const count = counts[config.slug] ?? 0;
+          const filters = getCategoryFilters(config.slug);
+          const topicLabels = filters.slice(0, 3).map((f) => f.label);
           const Icon = ICON_MAP[config.icon];
 
           return (
@@ -75,12 +79,9 @@ export async function CategoryShowcase() {
               <p className="text-[13px] leading-[1.5] text-[#5A5A6E] dark:text-[#A8B0A6] line-clamp-2">
                 {config.description}
               </p>
-              {count > 0 && (
-                <p className="mt-3 text-[12px] text-[#9B9B8E]">
-                  <span className="font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-0.5">
-                    {count}
-                  </span>
-                  {count === 1 ? "tip" : "tips"}
+              {topicLabels.length > 0 && (
+                <p className="mt-3 text-[12px] text-[#9B9B8E] line-clamp-1">
+                  {topicLabels.join(" · ")}
                 </p>
               )}
             </Link>

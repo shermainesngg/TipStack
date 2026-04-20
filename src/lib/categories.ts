@@ -89,6 +89,65 @@ export function getAllCategorySlugs(): ContentCategory[] {
   return Object.keys(CATEGORIES) as ContentCategory[];
 }
 
+// ─── Activity filters per category ──────────────────────────────────────────
+
+export interface ActivityFilter {
+  key: string;
+  label: string;
+  tags: string[];
+}
+
+const CATEGORY_FILTERS: Record<ContentCategory, ActivityFilter[]> = {
+  code_and_editing: [
+    { key: "generation", label: "Code Generation", tags: ["code-generation", "coding"] },
+    { key: "refactoring", label: "Refactoring", tags: ["refactoring"] },
+    { key: "review", label: "Code Review", tags: ["code-review"] },
+  ],
+  workflow_and_automation: [
+    { key: "agents", label: "Agents", tags: ["agents", "agentic"] },
+    { key: "pipelines", label: "Pipelines", tags: ["pipeline", "pipelines", "content-curation"] },
+    { key: "automation", label: "Automation", tags: ["automation"] },
+  ],
+  debugging_and_testing: [
+    { key: "debugging", label: "Debugging", tags: ["debugging"] },
+    { key: "testing", label: "Testing", tags: ["testing", "test-generation"] },
+    { key: "errors", label: "Error Handling", tags: ["error-handling", "error-resolution"] },
+  ],
+  prompting_and_context: [
+    { key: "prompt-eng", label: "Prompt Engineering", tags: ["prompt_engineering", "prompt-engineering"] },
+    { key: "context", label: "Context Management", tags: ["context_management", "context-management"] },
+    { key: "system-prompts", label: "System Prompts", tags: ["system_prompts", "system-prompts"] },
+  ],
+  tools_and_updates: [
+    { key: "releases", label: "New Releases", tags: ["model_updates", "releases"] },
+    { key: "comparisons", label: "Model Comparisons", tags: ["model_comparisons", "model-comparisons"] },
+    { key: "benchmarks", label: "Benchmarks", tags: ["benchmarks", "benchmark"] },
+  ],
+  architecture_and_data: [
+    { key: "system-design", label: "System Design", tags: ["system_design", "system-design", "design"] },
+    { key: "api-design", label: "API Design", tags: ["api_design", "api-design"] },
+    { key: "data-eng", label: "Data Engineering", tags: ["data_engineering", "data-pipelines"] },
+    { key: "databases", label: "Databases", tags: ["databases"] },
+  ],
+  learning_and_practices: [
+    { key: "tutorials", label: "Tutorials", tags: ["tutorial", "tutorials"] },
+    { key: "best-practices", label: "Best Practices", tags: ["best-practices", "best_practices"] },
+    { key: "research", label: "Research", tags: ["research"] },
+    { key: "team", label: "Team Workflows", tags: ["team-workflow", "stakeholder-communication"] },
+  ],
+};
+
+export function getCategoryFilters(slug: string): ActivityFilter[] {
+  return CATEGORY_FILTERS[slug as ContentCategory] ?? [];
+}
+
+export function getCategoryFilterByKey(
+  slug: string,
+  key: string
+): ActivityFilter | undefined {
+  return getCategoryFilters(slug).find((f) => f.key === key);
+}
+
 const WORKFLOW_TO_CATEGORY: Record<string, ContentCategory> = {
   coding: "code_and_editing",
   "code-generation": "code_and_editing",
