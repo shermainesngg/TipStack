@@ -3,8 +3,9 @@ import Link from "next/link";
 import { cacheTag, cacheLife } from "next/cache";
 import {
   getPublishedContentByDomain,
-  getAvailableTags,
+  hasDomainContent,
 } from "@/lib/supabase/queries";
+import { formatFreshness } from "@/lib/utils";
 import { getDomainConfig } from "@/lib/domains";
 import { AnimatedFeed } from "@/components/animated-feed";
 
@@ -16,13 +17,12 @@ async function getDomainContent(domain: string) {
   return getPublishedContentByDomain(domain);
 }
 
-async function getValidDomains() {
+async function isDomainValid(domain: string) {
   "use cache";
   cacheTag("content");
   cacheLife("hours");
 
-  const tags = await getAvailableTags();
-  return tags.domains;
+  return hasDomainContent(domain);
 }
 
 export default async function DomainPage({
@@ -33,21 +33,20 @@ export default async function DomainPage({
   const { domain } = await params;
 
   let content: Awaited<ReturnType<typeof getDomainContent>> = [];
-  let validDomains: string[] = [];
+  let domainExists = false;
 
   try {
-    [content, validDomains] = await Promise.all([
+    [content, domainExists] = await Promise.all([
       getDomainContent(domain),
-      getValidDomains(),
+      isDomainValid(domain),
     ]);
   } catch {
     // Supabase not configured yet
   }
 
   const config = getDomainConfig(domain);
-  const isKnownDomain = validDomains.includes(domain);
 
-  if (!isKnownDomain && content.length === 0) {
+  if (!domainExists && content.length === 0) {
     notFound();
   }
 
@@ -77,10 +76,7 @@ export default async function DomainPage({
           </p>
 
           <p className="mt-6 text-[14px] tracking-wide text-[#9B9B8E]">
-            <span className="text-[20px] font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-1">
-              {content.length}
-            </span>
-            {content.length === 1 ? "tip" : "tips"}
+            {formatFreshness(content[0]?.published_at ?? null)}
           </p>
         </div>
       </div>

@@ -122,7 +122,7 @@ This catches problems *before* your teammates see them, reducing review cycles.
 - Combine these patterns with CI checks for a safety net.
 
 These patterns have saved teams anywhere from 2-8 hours per week on routine codebase maintenance. Start with one pattern, measure the time saved, and expand from there.`,
-    tags_tool: ["claude-code", "anthropic"],
+    tags_tool: ["claude_code"],
     tags_role: ["developer", "staff-engineer"],
     tags_workflow: ["code-generation", "refactoring", "code-review"],
     source_urls: [
@@ -154,7 +154,7 @@ These patterns have saved teams anywhere from 2-8 hours per week on routine code
             "Point Claude Code at schema diffs to auto-generate migrations",
             "Run Claude Code as a pre-PR reviewer to catch issues early",
           ],
-          tags_tool: ["claude-code"],
+          tags_tool: ["claude_code"],
           tags_role: ["developer"],
           tags_workflow: ["code-generation", "refactoring"],
           quality_signal: "high",
@@ -172,7 +172,7 @@ These patterns have saved teams anywhere from 2-8 hours per week on routine code
             "Explicit constraints prevent Claude Code from over-editing",
             "Combine with git diff review before committing",
           ],
-          tags_tool: ["claude-code"],
+          tags_tool: ["claude_code"],
           tags_role: ["developer", "staff-engineer"],
           tags_workflow: ["refactoring", "code-review"],
           quality_signal: "high",
@@ -270,7 +270,7 @@ After running this pipeline for two weeks, a solo operator reported:
 - Chain multiple Claude calls for multi-step reasoning on complex articles
 
 n8n's visual workflow builder makes it straightforward to experiment with new nodes without rewriting code. Pair it with Claude's structured output and you have a remarkably capable content pipeline for near-zero marginal cost.`,
-    tags_tool: ["n8n", "claude", "rss"],
+    tags_tool: ["n8n", "claude_code"],
     tags_role: ["content-creator", "solopreneur", "developer"],
     tags_workflow: ["automation", "content-curation", "pipeline"],
     source_urls: [
@@ -302,7 +302,7 @@ n8n's visual workflow builder makes it straightforward to experiment with new no
             "Deduplicate against existing content using slug lookups",
             "Add retry policies and dead-letter branches for resilience",
           ],
-          tags_tool: ["n8n", "claude"],
+          tags_tool: ["n8n", "claude_code"],
           tags_role: ["content-creator"],
           tags_workflow: ["automation", "content-curation"],
           quality_signal: "high",
@@ -321,7 +321,7 @@ n8n's visual workflow builder makes it straightforward to experiment with new no
             "Use environment variables for API keys in n8n",
             "Add Slack approval for human-in-the-loop publishing",
           ],
-          tags_tool: ["n8n", "claude"],
+          tags_tool: ["n8n", "claude_code"],
           tags_role: ["solopreneur"],
           tags_workflow: ["automation", "pipeline"],
           quality_signal: "medium",
@@ -415,7 +415,7 @@ After introducing a \`.cursorrules\` file on a 6-person team:
 - **Onboarding time** for new team members decreased since the rules file doubled as a conventions guide
 
 Cursor's rules system is simple but high-leverage. Spend an hour writing a thorough rules file and you'll save that time back within your first week.`,
-    tags_tool: ["cursor", "ai-editor"],
+    tags_tool: ["cursor"],
     tags_role: ["developer", "tech-lead"],
     tags_workflow: ["code-generation", "developer-experience", "team-workflow"],
     source_urls: [
@@ -580,7 +580,7 @@ what didn't, action items). Summarize into:
 - Anything involving confidential user data without proper data handling agreements
 
 This playbook is a starting point. The best PM prompts are the ones you refine over weeks of daily use. Start with one workflow phase, build the habit, and expand from there.`,
-    tags_tool: ["chatgpt", "openai"],
+    tags_tool: ["chatgpt"],
     tags_role: ["product-manager", "team-lead"],
     tags_workflow: ["writing", "research", "stakeholder-communication"],
     source_urls: [

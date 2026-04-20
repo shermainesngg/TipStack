@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback } from "react";
+import { toolDisplayName } from "@/lib/tools";
 
 interface TagFilterProps {
   tools: string[];
@@ -25,12 +26,16 @@ export function TagFilter({
   const activeTag = searchParams.get("tag");
 
   const handleFilter = useCallback(
-    (tag: string | null) => {
+    (tag: string | null, tagType?: "tool" | "focus" | "workflow") => {
       const params = new URLSearchParams(searchParams.toString());
       if (tag) {
         params.set("tag", tag);
+        if (tagType) {
+          params.set("tagType", tagType);
+        }
       } else {
         params.delete("tag");
+        params.delete("tagType");
       }
       router.push(`?${params.toString()}`, { scroll: false });
     },
@@ -68,9 +73,9 @@ export function TagFilter({
                 <button
                   key={`tool-${tag}`}
                   className={sidebarBtnClass(tag)}
-                  onClick={() => handleFilter(tag)}
+                  onClick={() => handleFilter(tag, "tool")}
                 >
-                  {formatLabel(tag)}
+                  {toolDisplayName(tag)}
                 </button>
               ))}
             </div>
@@ -87,7 +92,7 @@ export function TagFilter({
                 <button
                   key={`focus-${tag}`}
                   className={sidebarBtnClass(tag)}
-                  onClick={() => handleFilter(tag)}
+                  onClick={() => handleFilter(tag, "focus")}
                 >
                   {formatLabel(tag)}
                 </button>
@@ -106,7 +111,7 @@ export function TagFilter({
                 <button
                   key={`workflow-${tag}`}
                   className={sidebarBtnClass(tag)}
-                  onClick={() => handleFilter(tag)}
+                  onClick={() => handleFilter(tag, "workflow")}
                 >
                   {formatLabel(tag)}
                 </button>
@@ -140,16 +145,16 @@ export function TagFilter({
         <button
           key={`tool-${tag}`}
           className={chipClass(tag)}
-          onClick={() => handleFilter(tag)}
+          onClick={() => handleFilter(tag, "tool")}
         >
-          {formatLabel(tag)}
+          {toolDisplayName(tag)}
         </button>
       ))}
       {focuses.map((tag) => (
         <button
           key={`focus-${tag}`}
           className={chipClass(tag)}
-          onClick={() => handleFilter(tag)}
+          onClick={() => handleFilter(tag, "focus")}
         >
           {formatLabel(tag)}
         </button>
@@ -158,7 +163,7 @@ export function TagFilter({
         <button
           key={`workflow-${tag}`}
           className={chipClass(tag)}
-          onClick={() => handleFilter(tag)}
+          onClick={() => handleFilter(tag, "workflow")}
         >
           {formatLabel(tag)}
         </button>

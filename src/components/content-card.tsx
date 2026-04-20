@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { Content } from "@/types";
+import type { ContentSummary } from "@/types";
 import { TagPill } from "./tag-pill";
 
 const WORKFLOW_TINTS: Record<string, string> = {
@@ -36,7 +36,7 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-function collectTags(content: Content) {
+function collectTags(content: ContentSummary) {
   return [
     ...content.tags_tool.map((t) => ({ label: t, category: "tool" as const })),
     ...content.tags_focus.map((t) => ({ label: t, category: "focus" as const })),
@@ -49,7 +49,7 @@ export function ContentCard({
   content,
   featured = false,
 }: {
-  content: Content;
+  content: ContentSummary;
   featured?: boolean;
 }) {
   if (featured) return <FeaturedCard content={content} />;
@@ -67,7 +67,7 @@ export function ContentCard({
   }
 }
 
-function FeaturedCard({ content }: { content: Content }) {
+function FeaturedCard({ content }: { content: ContentSummary }) {
   const allTags = collectTags(content);
   const visibleTags = allTags.slice(0, 5);
   const creator = content.source_urls?.[0]?.creator;
@@ -132,7 +132,7 @@ function FeaturedCard({ content }: { content: Content }) {
   );
 }
 
-function QuickTipCard({ content }: { content: Content }) {
+function QuickTipCard({ content }: { content: ContentSummary }) {
   const creator = content.source_urls?.[0]?.creator;
   const topTag = collectTags(content)[0];
 
@@ -166,7 +166,7 @@ function QuickTipCard({ content }: { content: Content }) {
   );
 }
 
-function UpdateCard({ content }: { content: Content }) {
+function UpdateCard({ content }: { content: ContentSummary }) {
   const allTags = collectTags(content);
   const visibleTags = allTags.slice(0, 2);
 
@@ -207,12 +207,11 @@ function UpdateCard({ content }: { content: Content }) {
   );
 }
 
-function RoundupCard({ content }: { content: Content }) {
+function RoundupCard({ content }: { content: ContentSummary }) {
   const tintClass = getTintClass(content.tags_workflow);
   const allTags = collectTags(content);
   const visibleTags = allTags.slice(0, 4);
   const creator = content.source_urls?.[0]?.creator;
-  const tipCount = content.body.match(/^##\s/gm)?.length ?? 0;
 
   return (
     <Link href={`/content/${content.slug}`} className="block group">
@@ -225,11 +224,6 @@ function RoundupCard({ content }: { content: Content }) {
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#8B6E4E]">
             Roundup
           </span>
-          {tipCount > 0 && (
-            <span className="text-[12px] text-[#9B9B8E]">
-              {tipCount} sections
-            </span>
-          )}
         </div>
 
         <h2
@@ -270,7 +264,7 @@ function RoundupCard({ content }: { content: Content }) {
   );
 }
 
-function DeepDiveCard({ content }: { content: Content }) {
+function DeepDiveCard({ content }: { content: ContentSummary }) {
   const tintClass = getTintClass(content.tags_workflow);
   const allTags = collectTags(content);
   const visibleTags = allTags.slice(0, 3);

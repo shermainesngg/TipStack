@@ -2,15 +2,20 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cacheTag, cacheLife } from "next/cache";
 import {
-  getPublishedContentByCategoryAndDomain,
-  getAvailableTags,
+  getPublishedContentByCategoryAndActivity,
+  getActiveFiltersForCategory,
+  getCategoryToolsAndFreshness,
+  type CategoryMeta,
 } from "@/lib/supabase/queries";
+import { formatFreshness } from "@/lib/utils";
 import {
   getCategoryConfig,
   getAllCategorySlugs,
+  getCategoryFilters,
+  getCategoryFilterByKey,
 } from "@/lib/categories";
 import { getCategoryLayout } from "@/components/category-layouts";
-import { DomainFilter } from "@/components/domain-filter";
+import { CategoryFilter } from "@/components/tool-filter";
 import type { ContentCategory } from "@/types";
 import {
   Code2,
@@ -34,22 +39,30 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
 
 async function getCategoryContent(
   category: string,
-  domain: string | null
+  activityTags: string[] | null
 ) {
   "use cache";
   cacheTag("content");
   cacheLife("hours");
 
-  return getPublishedContentByCategoryAndDomain(category, domain);
+  return getPublishedContentByCategoryAndActivity(category, activityTags);
 }
 
-async function getDomains() {
+async function getActiveFilters(category: string) {
   "use cache";
   cacheTag("content");
   cacheLife("hours");
 
-  const tags = await getAvailableTags();
-  return tags.domains;
+  const filters = getCategoryFilters(category);
+  return getActiveFiltersForCategory(category, filters);
+}
+
+async function getMeta() {
+  "use cache";
+  cacheTag("content");
+  cacheLife("hours");
+
+  return getCategoryToolsAndFreshness();
 }
 
 export default async function CategoryPage({
@@ -57,10 +70,10 @@ export default async function CategoryPage({
   searchParams,
 }: {
   params: Promise<{ category: string }>;
-  searchParams: Promise<{ domain?: string }>;
+  searchParams: Promise<{ activity?: string }>;
 }) {
   const { category } = await params;
-  const { domain } = await searchParams;
+  const { activity } = await searchParams;
 
   const validSlugs = getAllCategorySlugs();
   if (!validSlugs.includes(category as ContentCategory)) {
@@ -70,17 +83,30 @@ export default async function CategoryPage({
   const config = getCategoryConfig(category)!;
   const Icon = ICON_MAP[config.icon];
 
+  const allFilters = getCategoryFilters(category);
+  const activeFilter = activity
+    ? getCategoryFilterByKey(category, activity)
+    : undefined;
+  const activityTags = activeFilter?.tags ?? null;
+
   let content: Awaited<ReturnType<typeof getCategoryContent>> = [];
-  let domains: string[] = [];
+  let activeFilterKeys: string[] = [];
+  let allMeta: Record<string, CategoryMeta> = {};
 
   try {
-    [content, domains] = await Promise.all([
-      getCategoryContent(category, domain ?? null),
-      getDomains(),
+    [content, activeFilterKeys, allMeta] = await Promise.all([
+      getCategoryContent(category, activityTags),
+      getActiveFilters(category),
+      getMeta(),
     ]);
   } catch {
     // Supabase not configured
   }
+
+  const categoryMeta = allMeta[category];
+  const visibleFilters = allFilters.filter((f) =>
+    activeFilterKeys.includes(f.key)
+  );
 
   const Layout = getCategoryLayout(category as ContentCategory);
 
@@ -106,20 +132,19 @@ export default async function CategoryPage({
           <p className="max-w-[50ch] text-[16px] leading-[1.7] text-[#5A5A6E] dark:text-[#A8B0A6]">
             {config.description}
           </p>
-          <p className="mt-3 text-[14px] text-[#9B9B8E]">
-            <span className="text-[18px] font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-1">
-              {content.length}
+          <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13px]">
+            <span className="text-[#9B9B8E]">
+              {formatFreshness(categoryMeta?.latestPublishedAt ?? null)}
             </span>
-            {content.length === 1 ? "tip" : "tips"}
-          </p>
+          </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-[1200px] px-5 py-8">
-        {domains.length > 0 && (
+        {visibleFilters.length > 1 && (
           <div className="mb-8">
             <Suspense>
-              <DomainFilter domains={domains} />
+              <CategoryFilter filters={visibleFilters} />
             </Suspense>
           </div>
         )}
@@ -127,13 +152,13 @@ export default async function CategoryPage({
         {content.length === 0 ? (
           <div className="py-24 text-left max-w-[40ch]">
             <p className="text-2xl font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC]">
-              {domain
-                ? `No ${config.label.toLowerCase()} tips for "${domain}" yet.`
+              {activeFilter
+                ? `No ${config.label.toLowerCase()} tips for "${activeFilter.label}" yet.`
                 : `No ${config.label.toLowerCase()} tips yet.`}
             </p>
             <p className="mt-3 text-[15px] leading-[1.7] text-[#5A5A6E] dark:text-[#A8B0A6]">
-              {domain
-                ? "Try removing the domain filter or browse another category."
+              {activeFilter
+                ? "Try removing the filter or browse another category."
                 : "The pipeline is running. Tips will appear here shortly."}
             </p>
           </div>

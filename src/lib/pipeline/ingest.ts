@@ -32,7 +32,7 @@ const EXTRACTION_TOOL = {
         type: "array",
         items: { type: "string" },
         description:
-          'AI tools mentioned or demonstrated. Use lowercase_snake_case. Examples: "claude_code", "cursor", "gpt", "copilot", "windsurf", "v0", "bolt", "n8n"',
+          'AI tool products mentioned or demonstrated — not companies. Use lowercase_snake_case. Canonical names: "claude_code", "cursor", "copilot", "chatgpt", "windsurf", "v0", "bolt", "n8n". Do NOT include company names (anthropic, openai) or generic terms (ai-editor, rss).',
       },
       tags_focus: {
         type: "array",

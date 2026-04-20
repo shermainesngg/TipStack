@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { cacheTag, cacheLife } from "next/cache";
 import { getAllCategoryConfigs } from "@/lib/categories";
-import { getCategoryCounts } from "@/lib/supabase/queries";
+import {
+  getCategoryToolsAndFreshness,
+  type CategoryMeta,
+} from "@/lib/supabase/queries";
 import {
   Code2,
   Workflow,
@@ -23,13 +26,12 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   BookOpen,
 };
 
-async function getCategories() {
+async function getCategoryMeta() {
   "use cache";
   cacheTag("content");
   cacheLife("hours");
 
-  const counts = await getCategoryCounts();
-  return { counts };
+  return getCategoryToolsAndFreshness();
 }
 
 function CategoryPill({ config }: { config: CategoryConfig }) {
@@ -51,17 +53,16 @@ function CategoryPill({ config }: { config: CategoryConfig }) {
 }
 
 export async function CategoryNav() {
-  let counts: Record<string, number> = {};
+  let meta: Record<string, CategoryMeta> = {};
   try {
-    const result = await getCategories();
-    counts = result.counts;
+    meta = await getCategoryMeta();
   } catch {
     // Supabase not configured
   }
 
   const configs = getAllCategoryConfigs();
   const categoriesWithContent = configs.filter(
-    (c) => (counts[c.slug] ?? 0) > 0
+    (c) => (meta[c.slug]?.count ?? 0) > 0
   );
   const categoriesToShow =
     categoriesWithContent.length > 0 ? categoriesWithContent : configs;

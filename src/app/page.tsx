@@ -3,19 +3,29 @@ import { cacheTag, cacheLife } from "next/cache";
 import {
   getPublishedContent,
   getPublishedContentByTags,
+  getPublishedContentByTagAny,
   getAvailableTags,
 } from "@/lib/supabase/queries";
+import { formatFreshness } from "@/lib/utils";
 import { AnimatedFeed } from "@/components/animated-feed";
 import { TagFilter } from "@/components/tag-filter";
 import { CategoryShowcase } from "@/components/category-showcase";
 
-async function getContent(tag: string | undefined) {
+async function getContent(
+  tag: string | undefined,
+  tagType: string | undefined
+) {
   "use cache";
   cacheTag("content");
   cacheLife("hours");
 
   if (tag) {
-    return getPublishedContentByTags([tag], [tag], [tag], [tag]);
+    if (!tagType) return getPublishedContentByTagAny(tag);
+    const tools = tagType === "tool" ? [tag] : [];
+    const focuses = tagType === "focus" ? [tag] : [];
+    const workflows = tagType === "workflow" ? [tag] : [];
+    const domains = tagType === "domain" ? [tag] : [];
+    return getPublishedContentByTags(tools, focuses, workflows, domains);
   }
   return getPublishedContent();
 }
@@ -31,9 +41,9 @@ async function getTags() {
 export default async function FeedPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ tag?: string; tagType?: string }>;
 }) {
-  const { tag } = await searchParams;
+  const { tag, tagType } = await searchParams;
 
   let content: Awaited<ReturnType<typeof getContent>> = [];
   let availableTags: Awaited<ReturnType<typeof getTags>> = {
@@ -45,7 +55,7 @@ export default async function FeedPage({
 
   try {
     [content, availableTags] = await Promise.all([
-      getContent(tag),
+      getContent(tag, tagType),
       getTags(),
     ]);
   } catch {
@@ -58,35 +68,27 @@ export default async function FeedPage({
     <div>
       <div className="mx-auto max-w-[1200px] px-5 pt-12 pb-2 lg:pt-20 lg:pb-6">
         <h1
-          className="font-heading font-extrabold tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] max-w-[14ch] leading-[1.05]"
+          className="font-heading font-extrabold tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] max-w-[20ch] leading-[1.05]"
           style={{ fontSize: "clamp(2rem, 4vw + 1rem, 3.25rem)" }}
         >
-          AI Workflow Tips
+          AI tips that are actually worth your time
         </h1>
-        <p className="mt-3 max-w-[44ch] text-[17px] leading-[1.7] text-[#5A5A6E] dark:text-[#A8B0A6]">
-          Curated, actionable tips from YouTube and Reddit — filtered for
-          signal, not noise.
+        <p className="mt-3 max-w-[48ch] text-[17px] leading-[1.7] text-[#5A5A6E] dark:text-[#A8B0A6]">
+          Filters out the noise from YouTube, Reddit, and X — and captures the signals worth your time.
         </p>
 
         <div className="mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-2 text-[14px] tracking-wide">
           <span className="text-[#8B6E4E]">
-            <span className="text-[20px] font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-1">
-              {content.length}
-            </span>
-            tips
+            {formatFreshness(content[0]?.published_at ?? null)}
           </span>
-          <span className="text-[#6B6B9E]">
-            <span className="text-[20px] font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-1">
-              {availableTags.tools.length}
+          {content.length > 0 && (
+            <span className="text-[#5A5A6E] dark:text-[#A8B0A6]">
+              <span className="text-[20px] font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-1">
+                {content.length}
+              </span>
+              tips published
             </span>
-            tools
-          </span>
-          <span className="text-[#4E7E5E]">
-            <span className="text-[20px] font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC] mr-1">
-              {availableTags.workflows.length}
-            </span>
-            workflows
-          </span>
+          )}
         </div>
       </div>
 
