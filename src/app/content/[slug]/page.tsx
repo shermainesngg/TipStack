@@ -69,25 +69,37 @@ function Tags({ content }: { content: Content }) {
 function Meta({ content }: { content: Content }) {
   const creator = content.source_urls?.[0]?.creator;
   const platform = content.source_urls?.[0]?.platform;
+  const wasUpdated =
+    content.updated_at &&
+    content.created_at &&
+    content.updated_at !== content.created_at &&
+    new Date(content.updated_at).getTime() - new Date(content.created_at).getTime() > 60_000;
 
   return (
-    <p className="text-[14px] text-[#9B9B8E] tracking-wide">
-      {creator && (
-        <>
-          <span className="font-medium text-[#5A5A6E] dark:text-[#A8B0A6]">
-            {creator}
-          </span>
-          {platform && (
-            <span className="text-[#9B9B8E]">
-              {" "}
-              on {platform === "youtube" ? "YouTube" : "Reddit"}
+    <div className="space-y-1">
+      <p className="text-[14px] text-[#9B9B8E] tracking-wide">
+        {creator && (
+          <>
+            <span className="font-medium text-[#5A5A6E] dark:text-[#A8B0A6]">
+              {creator}
             </span>
-          )}
-          <span className="mx-2 opacity-40">/</span>
-        </>
+            {platform && (
+              <span className="text-[#9B9B8E]">
+                {" "}
+                on {platform === "youtube" ? "YouTube" : "Reddit"}
+              </span>
+            )}
+            <span className="mx-2 opacity-40">/</span>
+          </>
+        )}
+        {formatDate(content.published_at)}
+      </p>
+      {wasUpdated && (
+        <p className="text-[13px] text-[#8B6E4E] tracking-wide">
+          Updated on {formatDate(content.updated_at)}
+        </p>
       )}
-      {formatDate(content.published_at)}
-    </p>
+    </div>
   );
 }
 

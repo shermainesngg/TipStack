@@ -6,6 +6,8 @@ interface PipelineNotification {
   itemsKept: number;
   itemsDiscarded: number;
   contentPiecesCreated: number;
+  feedPostsCreated?: number;
+  staleArticlesFlagged?: number;
 }
 
 /**
@@ -36,7 +38,9 @@ export async function notifyPipelineComplete(
 | Items fetched | ${stats.itemsFetched} |
 | Items kept after dedup/filter | ${stats.itemsKept} |
 | Items discarded | ${stats.itemsDiscarded} |
-| Content pieces created | ${stats.contentPiecesCreated} |
+| Articles created/updated | ${stats.contentPiecesCreated} |
+| Feed posts created | ${stats.feedPostsCreated ?? 0} |
+| Stale articles flagged | ${stats.staleArticlesFlagged ?? 0} |
 
 ${
   hasContent

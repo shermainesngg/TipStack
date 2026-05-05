@@ -74,7 +74,11 @@ You receive a batch of extracted content items from YouTube videos and Reddit po
    - 3-4: Thin content. A tip exists but it's vague or surface-level.
    - 1-2: No actionable content. Hype, opinion, or off-topic.
 
-**Keep items scoring 5 or above. Discard items scoring below 5.**
+**Quality thresholds vary by source platform:**
+- YouTube: keep items scoring 5 or above (long-form, demonstrates real workflows)
+- News/HN: keep items scoring 5 or above (community-curated)
+- Reddit: keep items scoring 7 or above (high noise ratio)
+- Twitter/X: keep items scoring 7 or above (often lacks actionable detail)
 
 Be aggressive about filtering — it's better to publish fewer high-quality pieces than to flood the feed with mediocre content.`;
 
@@ -143,8 +147,21 @@ ${batchDescription}`,
   const result = toolBlock.input as DedupResult;
   const keptIds: string[] = [];
 
+  const platformById = new Map(items.map((i: RawContent) => [i.id, i.platform]));
+  const PLATFORM_THRESHOLDS: Record<string, number> = {
+    youtube: 5,
+    news: 5,
+    reddit: 7,
+    twitter: 7,
+    docs: 3,
+  };
+
   for (const item of result.items) {
-    if (item.action === "keep") {
+    const platform = platformById.get(item.id) ?? "youtube";
+    const threshold = PLATFORM_THRESHOLDS[platform] ?? 5;
+    const meetsThreshold = item.quality_score >= threshold;
+
+    if (item.action === "keep" && meetsThreshold) {
       await updateRawContentStatus(item.id, "filtered");
       keptIds.push(item.id);
     } else {

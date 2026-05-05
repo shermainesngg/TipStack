@@ -146,7 +146,7 @@ export function extractSearchQueriesFromReddit(
 
 // ─── Main ───────────────────────────────────────────────────────────────────
 
-export async function fetchYouTube(redditTitles: string[] = []): Promise<FetchedItem[]> {
+export async function fetchYouTube(redditTitles: string[] = [], docKeywords: string[] = []): Promise<FetchedItem[]> {
   const items: FetchedItem[] = [];
 
   // ── Channel RSS feeds ─────────────────────────────────────────────────
@@ -191,10 +191,12 @@ export async function fetchYouTube(redditTitles: string[] = []): Promise<Fetched
   // ── Search discovery ──────────────────────────────────────────────────
   if (YOUTUBE_API_KEY) {
     const dynamicQueries = extractSearchQueriesFromReddit(redditTitles);
-    const allQueries = [...new Set([...dynamicQueries, ...EVERGREEN_SEARCH_QUERIES])];
+    const docQueries = docKeywords.slice(0, 3);
+    const allQueries = [...new Set([...dynamicQueries, ...docQueries, ...EVERGREEN_SEARCH_QUERIES])];
 
     console.log("=== YouTube search discovery ===\n");
     console.log(`  Dynamic queries from Reddit: ${dynamicQueries.length > 0 ? dynamicQueries.join(", ") : "(none)"}`);
+    console.log(`  Doc keyword queries: ${docQueries.length > 0 ? docQueries.join(", ") : "(none)"}`);
     console.log(`  Evergreen queries: ${EVERGREEN_SEARCH_QUERIES.join(", ")}`);
     console.log(`  Total: ${allQueries.length} unique queries\n`);
 

@@ -6,23 +6,23 @@ import {
   type CategoryMeta,
 } from "@/lib/supabase/queries";
 import {
-  Code2,
-  Workflow,
-  Bug,
-  MessageSquareCode,
+  Terminal,
+  Shield,
   Sparkles,
-  Layers,
-  BookOpen,
+  MessageSquareCode,
+  Workflow,
+  Blocks,
+  Bug,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Code2,
-  Workflow,
-  Bug,
-  MessageSquareCode,
+  Terminal,
+  Shield,
   Sparkles,
-  Layers,
-  BookOpen,
+  MessageSquareCode,
+  Workflow,
+  Blocks,
+  Bug,
 };
 
 async function getMeta() {

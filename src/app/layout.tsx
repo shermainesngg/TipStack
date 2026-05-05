@@ -6,7 +6,8 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import Link from "next/link";
-import { CategoryNav } from "@/components/category-nav";
+import { getAllCategoryConfigs } from "@/lib/categories";
+import { CategorySidebar, MobileTopicDrawer } from "@/components/category-sidebar";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -37,6 +38,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const categories = getAllCategoryConfigs();
+
   return (
     <html
       lang="en"
@@ -44,19 +47,40 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col bg-[#EDF2EC] text-[#1A1A2E] font-sans dark:bg-[#161B16] dark:text-[#EDF2EC]">
         <header className="sticky top-0 z-40 bg-[#EDF2EC]/90 backdrop-blur-sm dark:bg-[#161B16]/90">
-          <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-5">
+          <div className="mx-auto flex h-16 max-w-[1200px] items-center px-5">
             <Link
               href="/"
               className="text-lg font-heading font-bold tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] hover:opacity-70 transition-opacity"
             >
               TipStack
             </Link>
-            <Suspense>
-              <CategoryNav />
-            </Suspense>
+            <nav className="ml-8 hidden sm:flex items-center gap-1" aria-label="Main">
+              <Link
+                href="/"
+                className="px-3 py-1.5 rounded-full text-[14px] font-medium text-[#5A5A6E] hover:text-[#1A1A2E] hover:bg-[#dde4db] dark:text-[#A8B0A6] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A] transition-colors duration-150"
+              >
+                What&apos;s New
+              </Link>
+              <Link
+                href="/timeline"
+                className="px-3 py-1.5 rounded-full text-[14px] font-medium text-[#5A5A6E] hover:text-[#1A1A2E] hover:bg-[#dde4db] dark:text-[#A8B0A6] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A] transition-colors duration-150"
+              >
+                Timeline
+              </Link>
+            </nav>
+            <div className="ml-auto">
+              <Suspense>
+                <MobileTopicDrawer categories={categories} />
+              </Suspense>
+            </div>
           </div>
         </header>
-        <main className="flex-1">{children}</main>
+        <div className="mx-auto flex w-full max-w-[1200px] gap-10 px-5">
+          <Suspense>
+            <CategorySidebar categories={categories} />
+          </Suspense>
+          <main className="flex-1 min-w-0">{children}</main>
+        </div>
       </body>
     </html>
   );

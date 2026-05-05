@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Code2 } from "lucide-react";
+import { MessageSquareCode } from "lucide-react";
 import { TagPill } from "@/components/tag-pill";
 import type { Content } from "@/types";
 
@@ -34,7 +34,7 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-function FeaturedTechnique({ content }: { content: Content }) {
+function FeaturedPrompt({ content }: { content: Content }) {
   const snippet = extractCodeSnippet(content.body, 8);
   const topTags = content.tags_tool
     .slice(0, 2)
@@ -43,11 +43,11 @@ function FeaturedTechnique({ content }: { content: Content }) {
   return (
     <Link href={`/content/${content.slug}`} className="block group">
       <motion.article
-        className="rounded-2xl bg-[#fafcf9] p-8 lg:p-10
+        className="rounded-2xl bg-[#fdfaf3] p-8 lg:p-10
           shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_rgba(0,0,0,0.05)]
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.06),0_16px_40px_rgba(0,0,0,0.1)]
           transition-all duration-300 ease-out
-          dark:bg-[#1E241E] dark:shadow-[0_1px_3px_rgba(0,0,0,0.2),0_8px_24px_rgba(0,0,0,0.3)]"
+          dark:bg-[#24211A] dark:shadow-[0_1px_3px_rgba(0,0,0,0.2),0_8px_24px_rgba(0,0,0,0.3)]"
         variants={itemVariants}
       >
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
@@ -61,9 +61,9 @@ function FeaturedTechnique({ content }: { content: Content }) {
 
           <div className={snippet ? "lg:w-1/2" : ""}>
             <div className="flex items-center gap-2 mb-3">
-              <Code2 className="size-3.5 text-[#2D6040]" />
-              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#2D6040]">
-                Featured Technique
+              <MessageSquareCode className="size-3.5 text-[#7B6230]" />
+              <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#7B6230]">
+                Featured Pattern
               </span>
             </div>
 
@@ -80,11 +80,7 @@ function FeaturedTechnique({ content }: { content: Content }) {
 
             <div className="mt-4 flex flex-wrap items-center gap-2">
               {topTags.map((tag) => (
-                <TagPill
-                  key={tag.label}
-                  label={tag.label}
-                  category={tag.category}
-                />
+                <TagPill key={tag.label} label={tag.label} category={tag.category} />
               ))}
               <span className="text-[12px] text-[#9B9B8E]">
                 {content.source_urls?.[0]?.creator}
@@ -103,16 +99,16 @@ function FeaturedTechnique({ content }: { content: Content }) {
   );
 }
 
-function TechniqueCard({ content }: { content: Content }) {
-  const snippet = extractCodeSnippet(content.body, 4);
+function PromptCard({ content }: { content: Content }) {
+  const snippet = extractCodeSnippet(content.body, 3);
   const topTag = content.tags_tool[0];
 
   return (
     <Link href={`/content/${content.slug}`} className="block group">
       <motion.article
-        className="rounded-2xl bg-[#f0f8f2] dark:bg-[#1a2b1e] p-5
+        className="rounded-2xl bg-[#f9f5ec] dark:bg-[#2a261a] p-5 h-full flex flex-col
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]
-          transition-shadow duration-300 ease-out h-full flex flex-col"
+          transition-shadow duration-300 ease-out"
         variants={itemVariants}
         whileHover={{ y: -3, transition: { type: "spring", stiffness: 300, damping: 20 } }}
       >
@@ -126,6 +122,10 @@ function TechniqueCard({ content }: { content: Content }) {
           {content.title}
         </h3>
 
+        <p className="mt-2 text-[13px] leading-[1.6] text-[#5A5A6E] dark:text-[#A8B0A6] line-clamp-2">
+          {content.summary}
+        </p>
+
         <div className="mt-auto pt-3 flex items-center gap-2">
           {topTag && <TagPill label={topTag} category="tool" />}
           <span className="text-[11px] text-[#9B9B8E]">
@@ -137,32 +137,10 @@ function TechniqueCard({ content }: { content: Content }) {
   );
 }
 
-function QuickTechniqueRow({ content }: { content: Content }) {
-  return (
-    <Link href={`/content/${content.slug}`} className="block group">
-      <motion.article
-        className="flex items-center gap-3 rounded-xl px-4 py-3 bg-[#fafcfa] dark:bg-[#1E241E]
-          group-hover:bg-[#f0f8f2] dark:group-hover:bg-[#1a2b1e] transition-colors duration-200"
-        variants={itemVariants}
-      >
-        <Code2 className="size-3.5 text-[#2D6040] shrink-0" />
-        <h3 className="flex-1 min-w-0 text-[14px] font-heading font-medium text-[#1A1A2E] dark:text-[#EDF2EC] truncate">
-          {content.title}
-        </h3>
-        <span className="text-[11px] text-[#9B9B8E] shrink-0">
-          {formatDate(content.published_at)}
-        </span>
-      </motion.article>
-    </Link>
-  );
-}
-
-export function CodeEditingLayout({ content }: { content: Content[] }) {
+export function PromptingRulesLayout({ content }: { content: Content[] }) {
   if (content.length === 0) return null;
 
   const [featured, ...rest] = content;
-  const quickTips = rest.filter((c) => c.content_type === "quick_tip");
-  const others = rest.filter((c) => c.content_type !== "quick_tip");
 
   return (
     <motion.div
@@ -171,26 +149,15 @@ export function CodeEditingLayout({ content }: { content: Content[] }) {
       initial="hidden"
       animate="visible"
     >
-      <FeaturedTechnique content={featured} />
+      <FeaturedPrompt content={featured} />
 
-      {others.length > 0 && (
+      {rest.length > 0 && (
         <motion.div
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
           variants={containerVariants}
         >
-          {others.map((item) => (
-            <TechniqueCard key={item.id} content={item} />
-          ))}
-        </motion.div>
-      )}
-
-      {quickTips.length > 0 && (
-        <motion.div className="space-y-1" variants={containerVariants}>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9B9B8E] mb-3 px-1">
-            Quick Techniques
-          </p>
-          {quickTips.map((item) => (
-            <QuickTechniqueRow key={item.id} content={item} />
+          {rest.map((item) => (
+            <PromptCard key={item.id} content={item} />
           ))}
         </motion.div>
       )}

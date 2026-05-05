@@ -6,24 +6,24 @@ import {
   type CategoryMeta,
 } from "@/lib/supabase/queries";
 import {
-  Code2,
-  Workflow,
-  Bug,
-  MessageSquareCode,
+  Terminal,
+  Shield,
   Sparkles,
-  Layers,
-  BookOpen,
+  MessageSquareCode,
+  Workflow,
+  Blocks,
+  Bug,
 } from "lucide-react";
 import type { CategoryConfig } from "@/lib/categories";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  Code2,
-  Workflow,
-  Bug,
-  MessageSquareCode,
+  Terminal,
+  Shield,
   Sparkles,
-  Layers,
-  BookOpen,
+  MessageSquareCode,
+  Workflow,
+  Blocks,
+  Bug,
 };
 
 async function getCategoryMeta() {
@@ -61,18 +61,13 @@ export async function CategoryNav() {
   }
 
   const configs = getAllCategoryConfigs();
-  const categoriesWithContent = configs.filter(
-    (c) => (meta[c.slug]?.count ?? 0) > 0
-  );
-  const categoriesToShow =
-    categoriesWithContent.length > 0 ? categoriesWithContent : configs;
 
   return (
     <nav
       className="flex gap-0.5 overflow-x-auto scrollbar-hide"
       aria-label="Browse by category"
     >
-      {categoriesToShow.map((config) => (
+      {configs.map((config) => (
         <CategoryPill key={config.slug} config={config} />
       ))}
     </nav>

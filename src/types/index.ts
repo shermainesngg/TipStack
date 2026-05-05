@@ -4,18 +4,18 @@ export type ContentStatus = "pending_review" | "published" | "rejected";
 
 export type RawContentStatus = "ingested" | "filtered" | "merged" | "discarded";
 
-export type Platform = "youtube" | "reddit" | "twitter" | "news";
+export type Platform = "youtube" | "reddit" | "twitter" | "news" | "docs";
 
 export type ContentType = "quick_tip" | "deep_dive" | "roundup" | "update";
 
 export type ContentCategory =
-  | "code_and_editing"
-  | "workflow_and_automation"
-  | "debugging_and_testing"
-  | "prompting_and_context"
-  | "tools_and_updates"
-  | "architecture_and_data"
-  | "learning_and_practices";
+  | "claude_code_features"
+  | "security_and_guardrails"
+  | "github_skills"
+  | "prompting_and_rules"
+  | "workflow_patterns"
+  | "mcp_and_integrations"
+  | "debugging_and_testing";
 
 export interface Content {
   id: string;
@@ -32,7 +32,13 @@ export interface Content {
   tags_category: ContentCategory;
   source_urls: SourceUrl[];
   created_at: string;
+  updated_at: string | null;
   published_at: string | null;
+  needs_review?: boolean;
+  review_reason?: string;
+  based_on_version?: string;
+  last_rewritten_at?: string;
+  sub_topic?: string;
 }
 
 export type ContentSummary = Omit<Content, "body">;
@@ -115,6 +121,21 @@ export interface SynthesizedPiece {
 
 export interface SynthesisResult {
   content_pieces: SynthesizedPiece[];
+}
+
+// ─── Feed Types ────────────────────────────────────────────────────────────
+
+export interface FeedPost {
+  id: string;
+  headline: string;
+  summary: string;
+  source_urls: SourceUrl[];
+  topic_content_id: string;
+  source_platforms: Platform[];
+  pipeline_run_id: string | null;
+  published_at: string;
+  created_at: string;
+  topic_slug?: string;
 }
 
 // ─── Source Config Types ────────────────────────────────────────────────────

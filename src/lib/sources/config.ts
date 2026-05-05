@@ -21,6 +21,11 @@ export const YOUTUBE_CHANNELS: YouTubeChannel[] = [
     channelId: "UCdCR4-uYOg5ju-IUuDnfnQA",
     handle: "@simonscrapes",
   },
+  {
+    name: "Mansel Scheffel",
+    channelId: "UCT5C-u2lpdcQrfT-sZ9GZug",
+    handle: "@mansel.scheffel",
+  },
 ];
 
 /** Evergreen queries that always run regardless of Reddit trends */
@@ -112,3 +117,11 @@ export const TWITTER_SEARCH_RESULTS_PER_QUERY = 20;
 
 /** Minimum likes for search-discovered tweets */
 export const TWITTER_SEARCH_MIN_LIKES = 25;
+
+// ─── Documentation / Official Sources ────────────────────────────────────────
+
+export const DOCS_GITHUB_REPO = "anthropics/claude-code";
+export const DOCS_RELEASES_FEED = "https://github.com/anthropics/claude-code/releases.atom";
+export const DOCS_WHATS_NEW_BASE = "https://code.claude.com/docs/en/whats-new";
+export const DOCS_MAX_RELEASES = 5;
+export const DOCS_MIN_BULLET_POINTS = 3;

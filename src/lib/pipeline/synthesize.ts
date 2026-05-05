@@ -71,16 +71,16 @@ const SYNTHESIS_TOOL = {
             tags_category: {
               type: "string",
               enum: [
-                "code_and_editing",
-                "workflow_and_automation",
+                "claude_code_features",
+                "security_and_guardrails",
+                "github_skills",
+                "prompting_and_rules",
+                "workflow_patterns",
+                "mcp_and_integrations",
                 "debugging_and_testing",
-                "prompting_and_context",
-                "tools_and_updates",
-                "architecture_and_data",
-                "learning_and_practices",
               ],
               description:
-                "Primary intent category. code_and_editing = AI-assisted coding/refactoring/review. workflow_and_automation = agents/pipelines/orchestration. debugging_and_testing = AI debugging/test generation. prompting_and_context = prompt engineering/context management. tools_and_updates = new releases/model news. architecture_and_data = system design/data pipelines. learning_and_practices = guides/best practices/tutorials.",
+                "Primary category. claude_code_features = new releases, design patterns, correct usage of Claude Code features. security_and_guardrails = real-world security setups, permissions, production guardrails. github_skills = popular community skills, skill building, use cases. prompting_and_rules = CLAUDE.md patterns, prompt engineering, context management. workflow_patterns = agentic workflows, CI/CD, multi-agent, automation. mcp_and_integrations = MCP servers, tool connections, integration patterns. debugging_and_testing = test generation, AI debugging, TDD workflows.",
             },
             source_items: {
               type: "array",
@@ -276,7 +276,7 @@ ${itemDescriptions}`,
       tagsFocus: piece.tags_focus,
       tagsWorkflow: piece.tags_workflow,
       tagsDomain: piece.tags_domain ?? [],
-      tagsCategory: piece.tags_category ?? "learning_and_practices",
+      tagsCategory: piece.tags_category ?? "claude_code_features",
       sourceUrls: piece.source_urls,
     });
 

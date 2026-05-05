@@ -2,10 +2,13 @@ import { inngest } from "./client";
 import { fetchYouTubeItems } from "@/lib/sources/youtube";
 import { fetchRedditItems } from "@/lib/sources/reddit";
 import { fetchTwitterItems } from "@/lib/sources/twitter";
+import { fetchDocsItems, extractFeatureKeywords } from "@/lib/sources/docs";
 import { ingestItem } from "@/lib/pipeline/ingest";
 import { dedupAndFilter } from "@/lib/pipeline/dedup";
-import { synthesize } from "@/lib/pipeline/synthesize";
+import { matchAndUpdateArticles } from "@/lib/pipeline/match-articles";
+import { generateFeedPosts } from "@/lib/pipeline/generate-feed-posts";
 import { notifyPipelineComplete } from "@/lib/pipeline/notify";
+import { getPublishedContent, flagArticleForReview } from "@/lib/supabase/queries";
 import type { FetchedItem } from "@/types";
 
 /**
@@ -25,12 +28,24 @@ export const pipelineFunction = inngest.createFunction(
   {
     id: "tipstack-pipeline",
     name: "TipStack Content Pipeline",
-    triggers: [{ event: "pipeline/run" }],
+    triggers: [
+      { event: "pipeline/run" },
+      { cron: "0 0 * * *" },  // 8 AM SGT (UTC+8)
+      { cron: "0 12 * * *" }, // 8 PM SGT (UTC+8)
+    ],
   },
   async ({ step }) => {
     const batchDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
 
     // ── Step 1: Fetch new items from all sources ──────────────────────────
+
+    const docsItems = await step.run("fetch-docs", async () => {
+      return fetchDocsItems();
+    });
+
+    const _docKeywords = await step.run("extract-doc-keywords", async () => {
+      return extractFeatureKeywords(docsItems);
+    });
 
     const youtubeItems = await step.run("fetch-youtube", async () => {
       return fetchYouTubeItems();
@@ -44,7 +59,7 @@ export const pipelineFunction = inngest.createFunction(
       return fetchTwitterItems();
     });
 
-    const allItems: FetchedItem[] = [...youtubeItems, ...redditItems, ...twitterItems];
+    const allItems: FetchedItem[] = [...docsItems, ...youtubeItems, ...redditItems, ...twitterItems];
 
     if (allItems.length === 0) {
       await step.run("notify-empty", async () => {
@@ -100,13 +115,51 @@ export const pipelineFunction = inngest.createFunction(
       };
     }
 
-    // ── Step 4: Synthesize into publishable content ───────────────────────
+    // ── Step 4: Match & update articles (replaces old synthesize) ───────
 
-    const piecesCreated = await step.run("synthesize", async () => {
-      return synthesize(batchDate);
+    const articleUpdates = await step.run("match-articles", async () => {
+      return matchAndUpdateArticles(batchDate);
     });
 
-    // ── Step 5: Notify admin ──────────────────────────────────────────────
+    // ── Step 5: Staleness detection ─────────────────────────────────────
+
+    const staleArticles = await step.run("detect-staleness", async () => {
+      const { detectStaleness } = await import("@/lib/pipeline/match-articles");
+      const publishedArticles = await getPublishedContent(100, 0);
+      return detectStaleness(docsItems, publishedArticles);
+    });
+
+    await step.run("flag-stale-articles", async () => {
+      for (const stale of staleArticles) {
+        await flagArticleForReview(stale.articleId, stale.reason);
+      }
+    });
+
+    // ── Step 6: Generate feed posts for each new/updated article ─────────
+
+    const feedPostsCreated = await step.run("generate-feed-posts", async () => {
+      return generateFeedPosts(articleUpdates);
+    });
+
+    // ── Step 7: Revalidate caches ───────────────────────────────────────
+
+    await step.run("revalidate-caches", async () => {
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : "http://localhost:3000";
+      const secret = process.env.REVALIDATION_SECRET;
+      if (!secret) return;
+
+      for (const tag of ["feed", "content"]) {
+        await fetch(`${baseUrl}/api/revalidate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ tag, secret }),
+        });
+      }
+    });
+
+    // ── Step 8: Notify admin ──────────────────────────────────────────────
 
     await step.run("notify-complete", async () => {
       await notifyPipelineComplete({
@@ -114,7 +167,9 @@ export const pipelineFunction = inngest.createFunction(
         itemsFetched: allItems.length,
         itemsKept: keptIds.length,
         itemsDiscarded,
-        contentPiecesCreated: piecesCreated,
+        contentPiecesCreated: articleUpdates.length,
+        feedPostsCreated,
+        staleArticlesFlagged: staleArticles.length,
       });
     });
 
@@ -124,7 +179,10 @@ export const pipelineFunction = inngest.createFunction(
       itemsFetched: allItems.length,
       itemsKept: keptIds.length,
       itemsDiscarded,
-      contentPiecesCreated: piecesCreated,
+      contentPiecesCreated: articleUpdates.length,
+      feedPostsCreated,
+      staleArticlesFlagged: staleArticles.length,
+      docKeywordsExtracted: _docKeywords.length,
     };
   }
 );

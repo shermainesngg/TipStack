@@ -1,6 +1,7 @@
+import "server-only";
 import { createServiceClient } from "./server";
 import { createBrowserClient } from "./browser";
-import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary } from "@/types";
+import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost } from "@/types";
 import { normalizeToolTag, expandToolAliases } from "@/lib/tools";
 
 const CARD_COLUMNS = "id, title, slug, summary, content_type, status, tags_tool, tags_focus, tags_workflow, tags_domain, tags_category, source_urls, created_at, published_at";
@@ -115,23 +116,30 @@ export async function insertContent(params: {
   tagsDomain: string[];
   tagsCategory: string;
   sourceUrls: SourceUrl[];
+  subTopic?: string;
 }): Promise<string> {
+  const insertData: Record<string, unknown> = {
+    title: params.title,
+    slug: params.slug,
+    summary: params.summary,
+    body: params.body,
+    content_type: params.contentType,
+    status: "pending_review",
+    tags_tool: params.tagsTool,
+    tags_focus: params.tagsFocus,
+    tags_workflow: params.tagsWorkflow,
+    tags_domain: params.tagsDomain,
+    tags_category: params.tagsCategory,
+    source_urls: params.sourceUrls,
+  };
+
+  if (params.subTopic) {
+    insertData.sub_topic = params.subTopic;
+  }
+
   const { data, error } = await getServiceClient()
     .from("content")
-    .insert({
-      title: params.title,
-      slug: params.slug,
-      summary: params.summary,
-      body: params.body,
-      content_type: params.contentType,
-      status: "pending_review",
-      tags_tool: params.tagsTool,
-      tags_focus: params.tagsFocus,
-      tags_workflow: params.tagsWorkflow,
-      tags_domain: params.tagsDomain,
-      tags_category: params.tagsCategory,
-      source_urls: params.sourceUrls,
-    })
+    .insert(insertData)
     .select("id")
     .single();
 
@@ -302,7 +310,7 @@ export async function getPublishedContentByDomain(
 
 // ─── category queries ─────────────────────────────────────────────────────
 
-/** Fetch published content by intent-based category */
+/** Fetch published content by intent-based category (includes sub_topic) */
 export async function getPublishedContentByCategory(
   category: string,
   limit = 40,
@@ -313,7 +321,7 @@ export async function getPublishedContentByCategory(
     .select("*")
     .eq("status", "published")
     .eq("tags_category", category)
-    .order("published_at", { ascending: false })
+    .order("updated_at", { ascending: false, nullsFirst: false })
     .range(offset, offset + limit - 1);
 
   if (error)
@@ -506,4 +514,209 @@ export async function getCategoryToolsAndFreshness(): Promise<
     };
   }
   return result;
+}
+
+// ─── feed_posts ─────────────────────────────────────────────────────────────
+
+const FEED_COLUMNS = "id, headline, summary, source_urls, topic_content_id, source_platforms, published_at";
+
+/** Fetch feed posts with cursor-based pagination (newest first, 30-day window) */
+export async function getFeedPosts(
+  cursor: string | null,
+  limit = 20
+): Promise<FeedPost[]> {
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  let query = getReadClient()
+    .from("feed_posts")
+    .select(`${FEED_COLUMNS}, content!inner(slug)`)
+    .gte("published_at", thirtyDaysAgo)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (cursor) {
+    query = query.lt("published_at", cursor);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to fetch feed posts: ${error.message}`);
+
+  return (data as Record<string, unknown>[]).map((row) => ({
+    ...(row as unknown as FeedPost),
+    topic_slug: (row.content as { slug: string })?.slug,
+  }));
+}
+
+// ─── topic matching (service client — pipeline only) ────────────────────────
+
+/** Find an existing published article matching incoming tags via array overlap */
+export async function findMatchingArticle(
+  tagsTool: string[],
+  tagsFocus: string[]
+): Promise<(Content & { overlap: number }) | null> {
+  if (tagsTool.length === 0 || tagsFocus.length === 0) return null;
+
+  const { data, error } = await getServiceClient()
+    .from("content")
+    .select("*")
+    .eq("status", "published")
+    .overlaps("tags_tool", tagsTool)
+    .overlaps("tags_focus", tagsFocus)
+    .order("published_at", { ascending: false })
+    .limit(10);
+
+  if (error) throw new Error(`Failed to find matching article: ${error.message}`);
+  if (!data || data.length === 0) return null;
+
+  let bestMatch: (Content & { overlap: number }) | null = null;
+  let bestOverlap = 0;
+
+  for (const row of data) {
+    const toolOverlap = (row.tags_tool as string[]).filter((t: string) => tagsTool.includes(t)).length;
+    const focusOverlap = (row.tags_focus as string[]).filter((t: string) => tagsFocus.includes(t)).length;
+    const overlap = toolOverlap + focusOverlap;
+    if (overlap > bestOverlap) {
+      bestOverlap = overlap;
+      bestMatch = { ...(row as Content), overlap };
+    }
+  }
+
+  return bestMatch;
+}
+
+/** Update an existing content article (living article re-synthesis) */
+export async function updateContentArticle(
+  id: string,
+  params: {
+    title: string;
+    summary: string;
+    body: string;
+    sourceUrls: SourceUrl[];
+    tagsTool: string[];
+    tagsFocus: string[];
+    tagsWorkflow: string[];
+    tagsDomain: string[];
+    subTopic?: string;
+  }
+): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    title: params.title,
+    summary: params.summary,
+    body: params.body,
+    source_urls: params.sourceUrls,
+    tags_tool: params.tagsTool,
+    tags_focus: params.tagsFocus,
+    tags_workflow: params.tagsWorkflow,
+    tags_domain: params.tagsDomain,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (params.subTopic) {
+    updateData.sub_topic = params.subTopic;
+  }
+
+  const { error } = await getServiceClient()
+    .from("content")
+    .update(updateData)
+    .eq("id", id);
+
+  if (error) throw new Error(`Failed to update content article: ${error.message}`);
+}
+
+// ─── staleness & review ──────────────────────────────────────────────────────
+
+/** Flag an article for review (staleness detection) */
+export async function flagArticleForReview(
+  id: string,
+  reason: string
+): Promise<void> {
+  const { error } = await getServiceClient()
+    .from("content")
+    .update({ needs_review: true, review_reason: reason })
+    .eq("id", id);
+
+  if (error) throw new Error(`Failed to flag article for review: ${error.message}`);
+}
+
+/** Get all articles that need review */
+export async function getArticlesNeedingReview(): Promise<Content[]> {
+  const { data, error } = await getServiceClient()
+    .from("content")
+    .select("*")
+    .eq("needs_review", true);
+
+  if (error) throw new Error(`Failed to fetch articles needing review: ${error.message}`);
+  return data as Content[];
+}
+
+/** Clear the review flag on an article */
+export async function clearReviewFlag(id: string): Promise<void> {
+  const { error } = await getServiceClient()
+    .from("content")
+    .update({ needs_review: false, review_reason: null })
+    .eq("id", id);
+
+  if (error) throw new Error(`Failed to clear review flag: ${error.message}`);
+}
+
+// ─── sub-topics ──────────────────────────────────────────────────────────────
+
+/** Get distinct sub-topics for a category */
+export async function getSubTopicsForCategory(
+  category: string
+): Promise<string[]> {
+  const { data, error } = await getServiceClient()
+    .from("content")
+    .select("sub_topic")
+    .eq("tags_category", category)
+    .not("sub_topic", "is", null)
+    .eq("status", "published");
+
+  if (error) throw new Error(`Failed to fetch sub-topics: ${error.message}`);
+
+  const unique = [...new Set((data as { sub_topic: string }[]).map((r) => r.sub_topic))];
+  return unique.sort();
+}
+
+/** Fetch published content by category and sub-topic */
+export async function getPublishedContentBySubTopic(
+  category: string,
+  subTopic: string
+): Promise<Content[]> {
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("*")
+    .eq("status", "published")
+    .eq("tags_category", category)
+    .eq("sub_topic", subTopic)
+    .order("published_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch content by sub-topic: ${error.message}`);
+  return data as Content[];
+}
+
+/** Insert a feed post */
+export async function insertFeedPost(params: {
+  headline: string;
+  summary: string;
+  sourceUrls: SourceUrl[];
+  topicContentId: string;
+  sourcePlatforms: string[];
+  pipelineRunId?: string;
+}): Promise<string> {
+  const { data, error } = await getServiceClient()
+    .from("feed_posts")
+    .insert({
+      headline: params.headline,
+      summary: params.summary,
+      source_urls: params.sourceUrls,
+      topic_content_id: params.topicContentId,
+      source_platforms: params.sourcePlatforms,
+      pipeline_run_id: params.pipelineRunId ?? null,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw new Error(`Failed to insert feed post: ${error.message}`);
+  return data.id;
 }
