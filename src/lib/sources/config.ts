@@ -26,20 +26,12 @@ export const YOUTUBE_CHANNELS: YouTubeChannel[] = [
     channelId: "UCT5C-u2lpdcQrfT-sZ9GZug",
     handle: "@mansel.scheffel",
   },
+  {
+    name: "Matt Pocock",
+    channelId: "UCswG6FSbgZjbWtdf_hMLaow",
+    handle: "@mattpocockuk",
+  },
 ];
-
-/** Evergreen queries that always run regardless of Reddit trends */
-export const YOUTUBE_EVERGREEN_QUERIES = [
-  "AI coding workflow",
-  "AI automation workflow",
-  "AI agents tutorial",
-];
-
-/** Max results per search query (each search costs 100 quota units) */
-export const YOUTUBE_SEARCH_RESULTS_PER_QUERY = 5;
-
-/** Minimum view count to consider a discovered video worth processing */
-export const YOUTUBE_SEARCH_MIN_VIEWS = 1000;
 
 export const SUBREDDITS: SubredditConfig[] = [
   // Tier 1 — MVP
@@ -72,9 +64,6 @@ export const REDDIT_MIN_SCORE = 10;
 
 /** Number of recent posts to fetch per subreddit */
 export const REDDIT_POSTS_PER_SUB = 10;
-
-/** Number of recent videos to fetch per YouTube channel */
-export const YOUTUBE_VIDEOS_PER_CHANNEL = 5;
 
 // ─── Twitter / X ──────────────────────────────────────────────────────────────
 

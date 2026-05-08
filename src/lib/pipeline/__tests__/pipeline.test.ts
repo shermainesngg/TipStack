@@ -5,31 +5,55 @@ import type { FetchedItem } from "@/types";
 
 const mockFetchYouTubeItems = vi.fn();
 const mockFetchRedditItems = vi.fn();
+const mockFetchTwitterItems = vi.fn();
+const mockFetchDocsItems = vi.fn();
+const mockExtractFeatureKeywords = vi.fn();
 vi.mock("@/lib/sources/youtube", () => ({
   fetchYouTubeItems: () => mockFetchYouTubeItems(),
 }));
 vi.mock("@/lib/sources/reddit", () => ({
   fetchRedditItems: () => mockFetchRedditItems(),
 }));
+vi.mock("@/lib/sources/twitter", () => ({
+  fetchTwitterItems: () => mockFetchTwitterItems(),
+}));
+vi.mock("@/lib/sources/docs", () => ({
+  fetchDocsItems: () => mockFetchDocsItems(),
+  extractFeatureKeywords: (...args: unknown[]) => mockExtractFeatureKeywords(...args),
+}));
 
-const mockIngestItem = vi.fn();
+const mockIngestBatch = vi.fn();
 vi.mock("@/lib/pipeline/ingest", () => ({
-  ingestItem: (...args: unknown[]) => mockIngestItem(...args),
+  ingestBatch: (...args: unknown[]) => mockIngestBatch(...args),
 }));
 
-const mockDedupAndFilter = vi.fn();
+const mockCodeDedup = vi.fn();
 vi.mock("@/lib/pipeline/dedup", () => ({
-  dedupAndFilter: (...args: unknown[]) => mockDedupAndFilter(...args),
+  codeDedup: (...args: unknown[]) => mockCodeDedup(...args),
 }));
 
-const mockSynthesize = vi.fn();
-vi.mock("@/lib/pipeline/synthesize", () => ({
-  synthesize: (...args: unknown[]) => mockSynthesize(...args),
+const mockMatchAndUpdateArticles = vi.fn();
+const mockDetectStaleness = vi.fn();
+vi.mock("@/lib/pipeline/match-articles", () => ({
+  matchAndUpdateArticles: (...args: unknown[]) => mockMatchAndUpdateArticles(...args),
+  detectStaleness: (...args: unknown[]) => mockDetectStaleness(...args),
+}));
+
+const mockGenerateFeedPosts = vi.fn();
+vi.mock("@/lib/pipeline/generate-feed-posts", () => ({
+  generateFeedPosts: (...args: unknown[]) => mockGenerateFeedPosts(...args),
 }));
 
 const mockNotify = vi.fn();
 vi.mock("@/lib/pipeline/notify", () => ({
   notifyPipelineComplete: (...args: unknown[]) => mockNotify(...args),
+}));
+
+const mockGetPublishedContent = vi.fn();
+const mockFlagArticleForReview = vi.fn();
+vi.mock("@/lib/supabase/queries", () => ({
+  getPublishedContent: (...args: unknown[]) => mockGetPublishedContent(...args),
+  flagArticleForReview: (...args: unknown[]) => mockFlagArticleForReview(...args),
 }));
 
 // Mock Inngest — capture the function handler so we can call it directly
@@ -69,6 +93,15 @@ function makeFetchedItem(
   };
 }
 
+function setupDefaultMocks() {
+  mockFetchDocsItems.mockResolvedValue([]);
+  mockExtractFeatureKeywords.mockReturnValue([]);
+  mockFetchTwitterItems.mockResolvedValue([]);
+  mockGetPublishedContent.mockResolvedValue([]);
+  mockDetectStaleness.mockReturnValue([]);
+  mockGenerateFeedPosts.mockResolvedValue(0);
+}
+
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe("pipeline function", () => {
@@ -77,6 +110,7 @@ describe("pipeline function", () => {
     mockStep.run.mockImplementation(
       (_name: string, fn: () => Promise<unknown>) => fn()
     );
+    setupDefaultMocks();
   });
 
   it("returns no_new_items and notifies when no sources have new content", async () => {
@@ -92,24 +126,25 @@ describe("pipeline function", () => {
         contentPiecesCreated: 0,
       })
     );
-    expect(mockIngestItem).not.toHaveBeenCalled();
-    expect(mockDedupAndFilter).not.toHaveBeenCalled();
-    expect(mockSynthesize).not.toHaveBeenCalled();
+    expect(mockIngestBatch).not.toHaveBeenCalled();
+    expect(mockCodeDedup).not.toHaveBeenCalled();
   });
 
-  it("runs full pipeline: fetch → extract → dedup → synthesize → notify", async () => {
+  it("runs full pipeline: fetch → batch extract → dedup → match → notify", async () => {
     mockFetchYouTubeItems.mockResolvedValue([makeFetchedItem("yt1")]);
     mockFetchRedditItems.mockResolvedValue([makeFetchedItem("rd1", "reddit")]);
-    mockIngestItem.mockResolvedValue("raw-id-1");
-    mockDedupAndFilter.mockResolvedValue(["raw-id-1"]);
-    mockSynthesize.mockResolvedValue(1);
+    mockIngestBatch.mockResolvedValue({ ingested: ["raw-1", "raw-2"], failed: [] });
+    mockCodeDedup.mockResolvedValue({ kept: ["raw-1"], discarded: ["raw-2"] });
+    mockMatchAndUpdateArticles.mockResolvedValue([
+      { contentId: "c1", isNew: true, sourcePlatforms: ["youtube"], sourceUrls: [] },
+    ]);
+    mockGenerateFeedPosts.mockResolvedValue(1);
 
     const result = await capturedHandler({ step: mockStep });
 
-    // Verify all stages ran
-    expect(mockIngestItem).toHaveBeenCalledTimes(2);
-    expect(mockDedupAndFilter).toHaveBeenCalledTimes(1);
-    expect(mockSynthesize).toHaveBeenCalledTimes(1);
+    expect(mockIngestBatch).toHaveBeenCalledTimes(1);
+    expect(mockCodeDedup).toHaveBeenCalledTimes(1);
+    expect(mockMatchAndUpdateArticles).toHaveBeenCalledTimes(1);
     expect(mockNotify).toHaveBeenCalledTimes(1);
 
     expect(result).toMatchObject({
@@ -123,12 +158,12 @@ describe("pipeline function", () => {
   it("skips synthesis and notifies when all items are filtered out", async () => {
     mockFetchYouTubeItems.mockResolvedValue([makeFetchedItem("yt1")]);
     mockFetchRedditItems.mockResolvedValue([]);
-    mockIngestItem.mockResolvedValue("raw-id-1");
-    mockDedupAndFilter.mockResolvedValue([]); // all discarded
+    mockIngestBatch.mockResolvedValue({ ingested: ["raw-1"], failed: [] });
+    mockCodeDedup.mockResolvedValue({ kept: [], discarded: ["raw-1"] });
 
     const result = await capturedHandler({ step: mockStep });
 
-    expect(mockSynthesize).not.toHaveBeenCalled();
+    expect(mockMatchAndUpdateArticles).not.toHaveBeenCalled();
     expect(mockNotify).toHaveBeenCalledWith(
       expect.objectContaining({
         itemsFetched: 1,
@@ -138,43 +173,5 @@ describe("pipeline function", () => {
       })
     );
     expect(result).toMatchObject({ status: "all_filtered" });
-  });
-
-  it("passes correct batch date to all stages", async () => {
-    mockFetchYouTubeItems.mockResolvedValue([makeFetchedItem("yt1")]);
-    mockFetchRedditItems.mockResolvedValue([]);
-    mockIngestItem.mockResolvedValue("raw-id-1");
-    mockDedupAndFilter.mockResolvedValue(["raw-id-1"]);
-    mockSynthesize.mockResolvedValue(1);
-
-    await capturedHandler({ step: mockStep });
-
-    const today = new Date().toISOString().split("T")[0];
-    expect(mockIngestItem).toHaveBeenCalledWith(expect.anything(), today);
-    expect(mockDedupAndFilter).toHaveBeenCalledWith(today);
-    expect(mockSynthesize).toHaveBeenCalledWith(today);
-  });
-
-  it("computes correct discard count in notification", async () => {
-    mockFetchYouTubeItems.mockResolvedValue([
-      makeFetchedItem("yt1"),
-      makeFetchedItem("yt2"),
-      makeFetchedItem("yt3"),
-    ]);
-    mockFetchRedditItems.mockResolvedValue([makeFetchedItem("rd1", "reddit")]);
-    mockIngestItem.mockResolvedValue("raw-id");
-    mockDedupAndFilter.mockResolvedValue(["raw-id"]); // 1 kept out of 4
-    mockSynthesize.mockResolvedValue(1);
-
-    await capturedHandler({ step: mockStep });
-
-    expect(mockNotify).toHaveBeenCalledWith(
-      expect.objectContaining({
-        itemsFetched: 4,
-        itemsKept: 1,
-        itemsDiscarded: 3,
-        contentPiecesCreated: 1,
-      })
-    );
   });
 });

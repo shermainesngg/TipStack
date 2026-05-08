@@ -516,6 +516,42 @@ export async function getCategoryToolsAndFreshness(): Promise<
   return result;
 }
 
+// ─── feed stats ─────────────────────────────────────────────────────────────
+
+export interface FeedStats {
+  sourcesProcessed: number;
+  toolsTracked: number;
+  articlesPublished: number;
+  lastIngestion: string | null;
+}
+
+export async function getFeedStats(): Promise<FeedStats> {
+  const client = getReadClient();
+
+  const [sourcesRes, toolsRes, contentCountRes, lastFeedPostRes] = await Promise.all([
+    client.from("sources_log").select("id", { count: "exact", head: true }),
+    client.from("content").select("tags_tool").eq("status", "published"),
+    client.from("content").select("id", { count: "exact", head: true }).eq("status", "published"),
+    client.from("feed_posts").select("published_at").order("published_at", { ascending: false }).limit(1),
+  ]);
+
+  const toolSet = new Set<string>();
+  if (toolsRes.data) {
+    for (const row of toolsRes.data) {
+      for (const t of (row as { tags_tool: string[] }).tags_tool) {
+        toolSet.add(t);
+      }
+    }
+  }
+
+  return {
+    sourcesProcessed: sourcesRes.count ?? 0,
+    toolsTracked: toolSet.size,
+    articlesPublished: contentCountRes.count ?? 0,
+    lastIngestion: (lastFeedPostRes.data?.[0] as { published_at: string } | undefined)?.published_at ?? null,
+  };
+}
+
 // ─── feed_posts ─────────────────────────────────────────────────────────────
 
 const FEED_COLUMNS = "id, headline, summary, source_urls, topic_content_id, source_platforms, published_at";
@@ -523,7 +559,8 @@ const FEED_COLUMNS = "id, headline, summary, source_urls, topic_content_id, sour
 /** Fetch feed posts with cursor-based pagination (newest first, 30-day window) */
 export async function getFeedPosts(
   cursor: string | null,
-  limit = 20
+  limit = 20,
+  platforms?: Platform[]
 ): Promise<FeedPost[]> {
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -536,6 +573,10 @@ export async function getFeedPosts(
 
   if (cursor) {
     query = query.lt("published_at", cursor);
+  }
+
+  if (platforms && platforms.length > 0) {
+    query = query.overlaps("source_platforms", platforms);
   }
 
   const { data, error } = await query;

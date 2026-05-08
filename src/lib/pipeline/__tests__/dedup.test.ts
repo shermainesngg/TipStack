@@ -3,10 +3,9 @@ import type { RawContent, ExtractionResult } from "@/types";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
-const mockCreate = vi.fn();
-vi.mock("@/lib/ai/anthropic", () => ({
-  getAnthropicClient: () => ({ messages: { create: mockCreate } }),
-  MODEL: "claude-sonnet-4-6-20250514",
+const mockCallClaudeCode = vi.fn();
+vi.mock("@/lib/ai/claude-code", () => ({
+  callClaudeCode: (...args: unknown[]) => mockCallClaudeCode(...args),
 }));
 
 const mockGetRawContentByStatus = vi.fn();
@@ -21,18 +20,19 @@ vi.mock("@/lib/supabase/queries", () => ({
     mockGetPublishedContent(...args),
 }));
 
-import { dedupAndFilter } from "../dedup";
+import { dedupAndFilter, codeDedup } from "../dedup";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function makeRawContent(
   id: string,
-  overrides: Partial<ExtractionResult> = {}
+  overrides: Partial<ExtractionResult> = {},
+  platform: "youtube" | "reddit" | "twitter" | "news" | "docs" = "youtube"
 ): RawContent {
   return {
     id,
     source_url: `https://example.com/${id}`,
-    platform: "youtube",
+    platform,
     raw_extract: {
       title: `Title ${id}`,
       summary: `Summary for ${id}`,
@@ -42,6 +42,7 @@ function makeRawContent(
       tags_workflow: ["coding"],
       tags_domain: ["frontend"],
       quality_signal: "high",
+      quality_score: 8,
       source_creator: "Test Creator",
       ...overrides,
     },
@@ -54,25 +55,16 @@ function makeRawContent(
 function mockClaudeDedup(
   items: { id: string; action: "keep" | "discard"; quality_score: number }[]
 ) {
-  mockCreate.mockResolvedValueOnce({
-    content: [
-      {
-        type: "tool_use",
-        id: "call_1",
-        name: "store_dedup_results",
-        input: {
-          items: items.map((i) => ({
-            ...i,
-            reason: i.action === "keep" ? "Good content" : "Low quality",
-            duplicate_of: null,
-          })),
-        },
-      },
-    ],
+  mockCallClaudeCode.mockResolvedValueOnce({
+    items: items.map((i) => ({
+      ...i,
+      reason: i.action === "keep" ? "Good content" : "Low quality",
+      duplicate_of: null,
+    })),
   });
 }
 
-// ── Tests ────────────────────────────────────────────────────────────────────
+// ── Tests: dedupAndFilter (Claude-based, kept for Inngest fallback) ─────────
 
 describe("dedupAndFilter", () => {
   beforeEach(() => {
@@ -86,13 +78,13 @@ describe("dedupAndFilter", () => {
     const result = await dedupAndFilter("2026-04-11");
 
     expect(result).toEqual([]);
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockCallClaudeCode).not.toHaveBeenCalled();
   });
 
   it("keeps high-quality items and discards low-quality ones", async () => {
     const items = [
       makeRawContent("aaa"),
-      makeRawContent("bbb", { quality_signal: "low" }),
+      makeRawContent("bbb", { quality_signal: "low", quality_score: 3 }),
       makeRawContent("ccc"),
     ];
     mockGetRawContentByStatus.mockResolvedValue(items);
@@ -113,63 +105,86 @@ describe("dedupAndFilter", () => {
     );
     expect(mockUpdateRawContentStatus).toHaveBeenCalledWith("ccc", "filtered");
   });
+});
 
-  it("discards all items when Claude says everything is low quality", async () => {
-    const items = [makeRawContent("aaa"), makeRawContent("bbb")];
+// ── Tests: codeDedup (no Claude call) ───────────────────────────────────────
+
+describe("codeDedup", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns empty when no ingested items exist", async () => {
+    mockGetRawContentByStatus.mockResolvedValue([]);
+
+    const result = await codeDedup("2026-04-11");
+
+    expect(result).toEqual({ kept: [], discarded: [] });
+    expect(mockCallClaudeCode).not.toHaveBeenCalled();
+  });
+
+  it("filters items below platform quality threshold", async () => {
+    const items = [
+      makeRawContent("yt1", { title: "YouTube Coding Workflow", quality_score: 6, tags_focus: ["coding"] }, "youtube"),
+      makeRawContent("rd1", { title: "Reddit Discussion Thread", quality_score: 6, tags_focus: ["security"] }, "reddit"),
+      makeRawContent("tw1", { title: "Twitter Quick Tips", quality_score: 5, tags_focus: ["automation"] }, "twitter"),
+      makeRawContent("nw1", { title: "Hacker News Roundup", quality_score: 5, tags_focus: ["model_updates"] }, "news"),
+    ];
     mockGetRawContentByStatus.mockResolvedValue(items);
 
-    mockClaudeDedup([
-      { id: "aaa", action: "discard", quality_score: 2 },
-      { id: "bbb", action: "discard", quality_score: 1 },
-    ]);
+    const result = await codeDedup("2026-04-11");
 
-    const result = await dedupAndFilter("2026-04-11");
-
-    expect(result).toEqual([]);
-    expect(mockUpdateRawContentStatus).toHaveBeenCalledTimes(2);
-    expect(mockUpdateRawContentStatus).toHaveBeenCalledWith(
-      "aaa",
-      "discarded"
-    );
+    expect(result.kept).toContain("yt1");
+    expect(result.kept).toContain("nw1");
+    expect(result.discarded).toContain("rd1");
+    expect(result.discarded).toContain("tw1");
+    expect(mockCallClaudeCode).not.toHaveBeenCalled();
   });
 
-  it("sends recent published content as cross-batch dedup context", async () => {
-    mockGetRawContentByStatus.mockResolvedValue([makeRawContent("aaa")]);
-    mockGetPublishedContent.mockResolvedValue([
-      { title: "Existing Piece", summary: "Already published content" },
-    ]);
-    mockClaudeDedup([{ id: "aaa", action: "keep", quality_score: 8 }]);
+  it("deduplicates items with similar titles and overlapping tags", async () => {
+    const items = [
+      makeRawContent("aaa", {
+        title: "Claude Code Context Management Tips",
+        quality_score: 9,
+        tags_tool: ["claude_code"],
+        tags_focus: ["context_management"],
+      }),
+      makeRawContent("bbb", {
+        title: "Tips for Managing Context in Claude Code",
+        quality_score: 7,
+        tags_tool: ["claude_code"],
+        tags_focus: ["context_management"],
+      }),
+    ];
+    mockGetRawContentByStatus.mockResolvedValue(items);
 
-    await dedupAndFilter("2026-04-11");
+    const result = await codeDedup("2026-04-11");
 
-    const callArgs = mockCreate.mock.calls[0][0];
-    const userMessage = callArgs.messages[0].content;
-    expect(userMessage).toContain("Recently Published Content");
-    expect(userMessage).toContain("Existing Piece");
+    expect(result.kept).toEqual(["aaa"]);
+    expect(result.discarded).toEqual(["bbb"]);
   });
 
-  it("calls Claude with tool_use for structured output", async () => {
-    mockGetRawContentByStatus.mockResolvedValue([makeRawContent("aaa")]);
-    mockClaudeDedup([{ id: "aaa", action: "keep", quality_score: 9 }]);
+  it("keeps items with different topics even if same tools", async () => {
+    const items = [
+      makeRawContent("aaa", {
+        title: "Claude Code Security Best Practices",
+        quality_score: 8,
+        tags_tool: ["claude_code"],
+        tags_focus: ["security"],
+      }),
+      makeRawContent("bbb", {
+        title: "Claude Code Prompt Engineering Guide",
+        quality_score: 8,
+        tags_tool: ["claude_code"],
+        tags_focus: ["prompt_engineering"],
+      }),
+    ];
+    mockGetRawContentByStatus.mockResolvedValue(items);
 
-    await dedupAndFilter("2026-04-11");
+    const result = await codeDedup("2026-04-11");
 
-    const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs.tool_choice).toEqual({
-      type: "tool",
-      name: "store_dedup_results",
-    });
-    expect(callArgs.tools[0].name).toBe("store_dedup_results");
-  });
-
-  it("throws when Claude does not return a tool_use block", async () => {
-    mockGetRawContentByStatus.mockResolvedValue([makeRawContent("aaa")]);
-    mockCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: "something went wrong" }],
-    });
-
-    await expect(dedupAndFilter("2026-04-11")).rejects.toThrow(
-      "Claude did not return a tool_use block"
-    );
+    expect(result.kept).toContain("aaa");
+    expect(result.kept).toContain("bbb");
+    expect(result.discarded).toEqual([]);
   });
 });

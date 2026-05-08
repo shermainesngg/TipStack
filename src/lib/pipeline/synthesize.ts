@@ -1,4 +1,4 @@
-import { getAnthropicClient, MODEL } from "@/lib/ai/anthropic";
+import { callClaudeCode } from "@/lib/ai/claude-code";
 import {
   getRawContentByStatus,
   insertContent,
@@ -6,131 +6,118 @@ import {
 } from "@/lib/supabase/queries";
 import type { SynthesisResult, RawContent } from "@/types";
 
-/**
- * Tool schema for the synthesis Claude call.
- * Claude receives all filtered items and produces publishable content pieces.
- */
-const SYNTHESIS_TOOL = {
-  name: "store_synthesis_results",
-  description:
-    "Store the synthesized content pieces ready for human review and publishing.",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      content_pieces: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            title: {
-              type: "string",
-              description:
-                "Clear, specific title that tells readers what they will learn. Not clickbait.",
-            },
-            slug: {
-              type: "string",
-              description:
-                "URL-safe, human-readable slug. Lowercase, hyphens only, no special characters. Example: claude-code-compact-context-management",
-            },
-            summary: {
-              type: "string",
-              description:
-                "2-3 sentences for card display. Should make someone want to click through.",
-            },
-            body: {
-              type: "string",
-              description:
-                "Full content in markdown. Detailed breakdown with steps, code examples if relevant, and practical guidance. Use ## headings, bullet points, and bold for scannability.",
-            },
-            content_type: {
-              type: "string",
-              enum: ["quick_tip", "deep_dive", "roundup", "update"],
-              description:
-                "Content format: quick_tip = one focused technique (1-2 paragraphs), deep_dive = thorough walkthrough (300-800 words), roundup = collection of related tips (numbered list), update = tool news or model release info",
-            },
-            tags_tool: {
-              type: "array",
-              items: { type: "string" },
-              description: 'AI tool products covered (lowercase_snake_case). Use canonical names: "claude_code", "cursor", "copilot", "chatgpt", "windsurf", "v0", "bolt", "n8n". No company names or generic terms.',
-            },
-            tags_focus: {
-              type: "array",
-              items: { type: "string" },
-              description: 'Cross-cutting focus areas. Prefer canonical values: "prompt_engineering", "context_management", "system_prompts", "cost_optimization", "security", "model_updates", "model_comparisons", "benchmarks", "best_practices". Add others only when none fit.',
-            },
-            tags_workflow: {
-              type: "array",
-              items: { type: "string" },
-              description: 'Work activity this content helps with. Prefer canonical values: "code-generation", "coding", "refactoring", "code-review", "automation", "pipeline", "agents", "debugging", "testing", "error-handling", "research", "tutorial", "team-workflow", "design", "content-curation". Add others only when none fit.',
-            },
-            tags_domain: {
-              type: "array",
-              items: { type: "string" },
-              description: 'Technical domain areas. Prefer canonical values: "frontend", "backend", "devops", "ci_cd", "databases", "api_design", "data_engineering", "system_design". Add others only when none fit.',
-            },
-            tags_category: {
-              type: "string",
-              enum: [
-                "claude_code_features",
-                "security_and_guardrails",
-                "github_skills",
-                "prompting_and_rules",
-                "workflow_patterns",
-                "mcp_and_integrations",
-                "debugging_and_testing",
-              ],
-              description:
-                "Primary category. claude_code_features = new releases, design patterns, correct usage of Claude Code features. security_and_guardrails = real-world security setups, permissions, production guardrails. github_skills = popular community skills, skill building, use cases. prompting_and_rules = CLAUDE.md patterns, prompt engineering, context management. workflow_patterns = agentic workflows, CI/CD, multi-agent, automation. mcp_and_integrations = MCP servers, tool connections, integration patterns. debugging_and_testing = test generation, AI debugging, TDD workflows.",
-            },
-            source_items: {
-              type: "array",
-              items: { type: "string" },
-              description:
-                "Array of raw_content IDs that were combined into this piece",
-            },
-            source_urls: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  url: { type: "string" },
-                  platform: {
-                    type: "string",
-                    enum: ["youtube", "reddit"],
-                  },
-                  creator: { type: "string" },
-                },
-                required: ["url", "platform", "creator"],
-              },
-              description:
-                "Original source URLs with platform and creator for attribution",
-            },
+const SYNTHESIS_SCHEMA = {
+  type: "object",
+  properties: {
+    content_pieces: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description:
+              "Clear, specific title that tells readers what they will learn. Not clickbait.",
           },
-          required: [
-            "title",
-            "slug",
-            "summary",
-            "body",
-            "content_type",
-            "tags_tool",
-            "tags_focus",
-            "tags_workflow",
-            "tags_domain",
-            "tags_category",
-            "source_items",
-            "source_urls",
-          ],
+          slug: {
+            type: "string",
+            description:
+              "URL-safe, human-readable slug. Lowercase, hyphens only, no special characters. Example: claude-code-compact-context-management",
+          },
+          summary: {
+            type: "string",
+            description:
+              "2-3 sentences for card display. Should make someone want to click through.",
+          },
+          body: {
+            type: "string",
+            description:
+              "Full content in markdown. Detailed breakdown with steps, code examples if relevant, and practical guidance. Use ## headings, bullet points, and bold for scannability.",
+          },
+          content_type: {
+            type: "string",
+            enum: ["quick_tip", "deep_dive", "roundup", "update"],
+            description:
+              "Content format: quick_tip = one focused technique (1-2 paragraphs), deep_dive = thorough walkthrough (300-800 words), roundup = collection of related tips (numbered list), update = tool news or model release info",
+          },
+          tags_tool: {
+            type: "array",
+            items: { type: "string" },
+            description: 'AI tool products covered (lowercase_snake_case). Use canonical names: "claude_code", "cursor", "copilot", "chatgpt", "windsurf", "v0", "bolt", "n8n". No company names or generic terms.',
+          },
+          tags_focus: {
+            type: "array",
+            items: { type: "string" },
+            description: 'Cross-cutting focus areas. Prefer canonical values: "prompt_engineering", "context_management", "system_prompts", "cost_optimization", "security", "model_updates", "model_comparisons", "benchmarks", "best_practices". Add others only when none fit.',
+          },
+          tags_workflow: {
+            type: "array",
+            items: { type: "string" },
+            description: 'Work activity this content helps with. Prefer canonical values: "code-generation", "coding", "refactoring", "code-review", "automation", "pipeline", "agents", "debugging", "testing", "error-handling", "research", "tutorial", "team-workflow", "design", "content-curation". Add others only when none fit.',
+          },
+          tags_domain: {
+            type: "array",
+            items: { type: "string" },
+            description: 'Technical domain areas. Prefer canonical values: "frontend", "backend", "devops", "ci_cd", "databases", "api_design", "data_engineering", "system_design". Add others only when none fit.',
+          },
+          tags_category: {
+            type: "string",
+            enum: [
+              "claude_code_features",
+              "security_and_guardrails",
+              "github_skills",
+              "prompting_and_rules",
+              "workflow_patterns",
+              "mcp_and_integrations",
+              "debugging_and_testing",
+            ],
+            description:
+              "Primary category. claude_code_features = new releases, design patterns, correct usage of Claude Code features. security_and_guardrails = real-world security setups, permissions, production guardrails. github_skills = popular community skills, skill building, use cases. prompting_and_rules = CLAUDE.md patterns, prompt engineering, context management. workflow_patterns = agentic workflows, CI/CD, multi-agent, automation. mcp_and_integrations = MCP servers, tool connections, integration patterns. debugging_and_testing = test generation, AI debugging, TDD workflows.",
+          },
+          source_items: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              "Array of raw_content IDs that were combined into this piece",
+          },
+          source_urls: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                url: { type: "string" },
+                platform: {
+                  type: "string",
+                  enum: ["youtube", "reddit"],
+                },
+                creator: { type: "string" },
+              },
+              required: ["url", "platform", "creator"],
+            },
+            description:
+              "Original source URLs with platform and creator for attribution",
+          },
         },
+        required: [
+          "title",
+          "slug",
+          "summary",
+          "body",
+          "content_type",
+          "tags_tool",
+          "tags_focus",
+          "tags_workflow",
+          "tags_domain",
+          "tags_category",
+          "source_items",
+          "source_urls",
+        ],
       },
     },
-    required: ["content_pieces"],
   },
+  required: ["content_pieces"],
 };
 
-/**
- * Few-shot examples embedded in the synthesis prompt so Claude
- * understands the tone, depth, and format we want.
- */
 const FEW_SHOT_EXAMPLES = `
 ## Example Published Pieces
 
@@ -199,25 +186,16 @@ You receive a batch of quality-filtered content extractions from YouTube videos 
 
 Generate URL-safe slugs: lowercase, hyphens between words, no special characters. Example: "claude-code-context-management-tips"
 
-${FEW_SHOT_EXAMPLES}`;
+${FEW_SHOT_EXAMPLES}
 
-/**
- * Run the synthesis stage on all filtered items for a batch.
- *
- * - Fetches all raw_content with status = 'filtered' for the batch date
- * - Calls Claude with the full set to generate publishable content pieces
- * - Writes each piece to the content table (status: pending_review)
- * - Updates raw_content status to 'merged' for items that were used
- * - Returns the number of content pieces created
- */
+Respond with valid JSON matching the schema provided.`;
+
 export async function synthesize(batchDate: string): Promise<number> {
   const items = await getRawContentByStatus("filtered", batchDate);
 
   if (items.length === 0) {
     return 0;
   }
-
-  const client = getAnthropicClient();
 
   const itemDescriptions = items
     .map((item: RawContent) => {
@@ -234,36 +212,19 @@ Tags: tool=[${extract.tags_tool.join(", ")}] focus=[${extract.tags_focus.join(",
     })
     .join("\n\n");
 
-  const response = await client.messages.create({
-    model: MODEL,
-    max_tokens: 8192,
-    system: SYNTHESIS_SYSTEM_PROMPT,
-    tools: [SYNTHESIS_TOOL],
-    tool_choice: { type: "tool", name: "store_synthesis_results" },
-    messages: [
-      {
-        role: "user",
-        content: `Synthesize these ${items.length} filtered content items into publishable content pieces. Group related items together where it makes sense. Every piece must be actionable and well-structured.
+  const result = await callClaudeCode<SynthesisResult>({
+    systemPrompt: SYNTHESIS_SYSTEM_PROMPT,
+    userMessage: `Synthesize these ${items.length} filtered content items into publishable content pieces. Group related items together where it makes sense. Every piece must be actionable and well-structured.
 
 ## Filtered Items
 
 ${itemDescriptions}`,
-      },
-    ],
+    jsonSchema: SYNTHESIS_SCHEMA,
   });
 
-  const toolBlock = response.content.find((block) => block.type === "tool_use");
-  if (!toolBlock || toolBlock.type !== "tool_use") {
-    throw new Error(
-      "Claude did not return a tool_use block for synthesis stage"
-    );
-  }
-
-  const result = toolBlock.input as SynthesisResult;
   let piecesCreated = 0;
 
   for (const piece of result.content_pieces) {
-    // Append batch date to slug for uniqueness across runs
     const uniqueSlug = `${piece.slug}-${batchDate}`;
 
     await insertContent({
@@ -280,7 +241,6 @@ ${itemDescriptions}`,
       sourceUrls: piece.source_urls,
     });
 
-    // Mark source raw_content items as merged
     for (const rawContentId of piece.source_items) {
       await updateRawContentStatus(rawContentId, "merged");
     }

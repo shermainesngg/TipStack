@@ -137,6 +137,33 @@
   display: none;
 }
 
+.scrollbar-feed {
+  scrollbar-width: thin;
+  scrollbar-color: #cdd5cb #EDF2EC;
+}
+.dark .scrollbar-feed {
+  scrollbar-color: #3A433A #161B16;
+}
+.scrollbar-feed::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-feed::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-feed::-webkit-scrollbar-thumb {
+  background: #cdd5cb;
+  border-radius: 9999px;
+}
+.scrollbar-feed::-webkit-scrollbar-thumb:hover {
+  background: #b8c2b6;
+}
+.dark .scrollbar-feed::-webkit-scrollbar-thumb {
+  background: #3A433A;
+}
+.dark .scrollbar-feed::-webkit-scrollbar-thumb:hover {
+  background: #4A554A;
+}
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);

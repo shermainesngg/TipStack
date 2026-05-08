@@ -77,6 +77,7 @@ export interface ExtractionResult {
   tags_workflow: string[];
   tags_domain: string[];
   quality_signal: "high" | "medium" | "low";
+  quality_score: number;
   source_creator: string;
 }
 

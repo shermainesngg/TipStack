@@ -3,10 +3,9 @@ import type { RawContent, ExtractionResult } from "@/types";
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
-const mockCreate = vi.fn();
-vi.mock("@/lib/ai/anthropic", () => ({
-  getAnthropicClient: () => ({ messages: { create: mockCreate } }),
-  MODEL: "claude-sonnet-4-6-20250514",
+const mockCallClaudeCode = vi.fn();
+vi.mock("@/lib/ai/claude-code", () => ({
+  callClaudeCode: (...args: unknown[]) => mockCallClaudeCode(...args),
 }));
 
 const mockGetRawContentByStatus = vi.fn();
@@ -41,6 +40,7 @@ function makeFilteredItem(
       tags_workflow: ["coding"],
       tags_domain: ["frontend"],
       quality_signal: "high",
+      quality_score: 8,
       source_creator: "Test Creator",
       ...overrides,
     },
@@ -57,33 +57,24 @@ function mockClaudeSynthesis(
     source_items: string[];
   }[]
 ) {
-  mockCreate.mockResolvedValueOnce({
-    content: [
-      {
-        type: "tool_use",
-        id: "call_1",
-        name: "store_synthesis_results",
-        input: {
-          content_pieces: pieces.map((p) => ({
-            title: p.title,
-            slug: p.slug,
-            summary: `Summary of ${p.title}`,
-            body: `## Overview\n\nDetailed content for ${p.title}.\n\n## Steps\n\n- Step 1\n- Step 2`,
-            tags_tool: ["claude_code"],
-            tags_focus: ["prompt_engineering"],
-            tags_workflow: ["coding"],
-            tags_domain: ["frontend"],
-            content_type: "deep_dive",
-            source_items: p.source_items,
-            source_urls: p.source_items.map((id) => ({
-              url: `https://youtube.com/watch?v=${id}`,
-              platform: "youtube",
-              creator: "Test Creator",
-            })),
-          })),
-        },
-      },
-    ],
+  mockCallClaudeCode.mockResolvedValueOnce({
+    content_pieces: pieces.map((p) => ({
+      title: p.title,
+      slug: p.slug,
+      summary: `Summary of ${p.title}`,
+      body: `## Overview\n\nDetailed content for ${p.title}.\n\n## Steps\n\n- Step 1\n- Step 2`,
+      tags_tool: ["claude_code"],
+      tags_focus: ["prompt_engineering"],
+      tags_workflow: ["coding"],
+      tags_domain: ["frontend"],
+      content_type: "deep_dive",
+      source_items: p.source_items,
+      source_urls: p.source_items.map((id) => ({
+        url: `https://youtube.com/watch?v=${id}`,
+        platform: "youtube",
+        creator: "Test Creator",
+      })),
+    })),
   });
 }
 
@@ -101,7 +92,7 @@ describe("synthesize", () => {
     const result = await synthesize("2026-04-11");
 
     expect(result).toBe(0);
-    expect(mockCreate).not.toHaveBeenCalled();
+    expect(mockCallClaudeCode).not.toHaveBeenCalled();
     expect(mockInsertContent).not.toHaveBeenCalled();
   });
 
@@ -125,7 +116,7 @@ describe("synthesize", () => {
     expect(mockInsertContent).toHaveBeenCalledTimes(1);
   });
 
-  it("writes content with pending_review status and correct fields", async () => {
+  it("writes content with correct fields", async () => {
     mockGetRawContentByStatus.mockResolvedValue([makeFilteredItem("aaa")]);
 
     mockClaudeSynthesis([
@@ -214,7 +205,7 @@ describe("synthesize", () => {
     expect(mockUpdateRawContentStatus).toHaveBeenCalledTimes(3);
   });
 
-  it("calls Claude with tool_use for structured output", async () => {
+  it("calls callClaudeCode with jsonSchema for structured output", async () => {
     mockGetRawContentByStatus.mockResolvedValue([makeFilteredItem("aaa")]);
     mockClaudeSynthesis([
       {
@@ -226,22 +217,9 @@ describe("synthesize", () => {
 
     await synthesize("2026-04-11");
 
-    const callArgs = mockCreate.mock.calls[0][0];
-    expect(callArgs.tool_choice).toEqual({
-      type: "tool",
-      name: "store_synthesis_results",
-    });
-    expect(callArgs.tools[0].name).toBe("store_synthesis_results");
-  });
-
-  it("throws when Claude does not return a tool_use block", async () => {
-    mockGetRawContentByStatus.mockResolvedValue([makeFilteredItem("aaa")]);
-    mockCreate.mockResolvedValueOnce({
-      content: [{ type: "text", text: "unexpected" }],
-    });
-
-    await expect(synthesize("2026-04-11")).rejects.toThrow(
-      "Claude did not return a tool_use block"
-    );
+    const callArgs = mockCallClaudeCode.mock.calls[0][0];
+    expect(callArgs.jsonSchema).toBeDefined();
+    expect(callArgs.jsonSchema.properties.content_pieces).toBeDefined();
+    expect(callArgs.systemPrompt).toContain("content synthesizer");
   });
 });

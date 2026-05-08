@@ -38,9 +38,11 @@ function groupByDate(posts: FeedPost[]): { date: string; posts: FeedPost[] }[] {
 export function FeedScroll({
   initialPosts,
   initialCursor,
+  platforms,
 }: {
   initialPosts: FeedPost[];
   initialCursor: string | null;
+  platforms?: string;
 }) {
   const [posts, setPosts] = useState(initialPosts);
   const [cursor, setCursor] = useState(initialCursor);
@@ -52,7 +54,9 @@ export function FeedScroll({
 
     setLoading(true);
     try {
-      const res = await fetch(`/api/feed?cursor=${encodeURIComponent(cursor)}&limit=20`);
+      let url = `/api/feed?cursor=${encodeURIComponent(cursor)}&limit=20`;
+      if (platforms) url += `&platforms=${encodeURIComponent(platforms)}`;
+      const res = await fetch(url);
       if (!res.ok) return;
 
       const data = await res.json();
@@ -61,7 +65,7 @@ export function FeedScroll({
     } finally {
       setLoading(false);
     }
-  }, [cursor, loading]);
+  }, [cursor, loading, platforms]);
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -82,12 +86,12 @@ export function FeedScroll({
 
   if (posts.length === 0) {
     return (
-      <div className="py-24 text-left max-w-[40ch]">
-        <p className="text-2xl font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC]">
+      <div className="py-12 text-left">
+        <p className="text-lg font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC]">
           No new updates yet.
         </p>
-        <p className="mt-3 text-[15px] leading-[1.7] text-[#5A5A6E] dark:text-[#A8B0A6]">
-          The pipeline runs twice daily. Check back later for the latest AI workflow tips.
+        <p className="mt-2 text-[14px] leading-[1.7] text-[#5A5A6E] dark:text-[#A8B0A6]">
+          Check back later — the pipeline runs twice daily.
         </p>
       </div>
     );

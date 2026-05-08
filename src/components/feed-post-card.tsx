@@ -50,15 +50,26 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
           transition-all duration-300 ease-out
           dark:bg-[#1E241E]"
       >
-        <div className="flex items-center gap-2 mb-3">
-          {post.source_platforms.map((platform) => (
-            <span
-              key={platform}
-              className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide ${PLATFORM_COLORS[platform as Platform] ?? ""}`}
-            >
-              {PLATFORM_LABELS[platform as Platform] ?? platform}
-            </span>
-          ))}
+        <div className="flex items-center gap-2 mb-3 flex-wrap">
+          {post.source_platforms.map((platform) => {
+            let label = PLATFORM_LABELS[platform as Platform] ?? platform;
+            if (platform === "reddit") {
+              const subs = post.source_urls
+                .filter((s) => s.platform === "reddit")
+                .map((s) => s.creator.match(/^r\/(\S+)/)?.[1])
+                .filter(Boolean);
+              const unique = [...new Set(subs)];
+              if (unique.length > 0) label = unique.map((s) => `r/${s}`).join(", ");
+            }
+            return (
+              <span
+                key={platform}
+                className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide ${PLATFORM_COLORS[platform as Platform] ?? ""}`}
+              >
+                {label}
+              </span>
+            );
+          })}
           <span className="text-[12px] text-[#9B9B8E] tracking-wide">
             {formatFeedTime(post.published_at)}
           </span>
@@ -68,22 +79,13 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
           {post.headline}
         </h2>
 
-        <div className="mt-3 text-[15px] leading-[1.65] text-[#5A5A6E] dark:text-[#A8B0A6] space-y-1">
-          {post.summary.split("\n").filter(Boolean).map((line, i) => (
-            <p key={i} className={line.startsWith("- ") ? "pl-3" : ""}>
-              {line.startsWith("- ") ? (
-                <>
-                  <span className="text-[#8B6E4E] mr-1.5" aria-hidden="true">
-                    &bull;
-                  </span>
-                  {line.slice(2)}
-                </>
-              ) : (
-                line
-              )}
-            </p>
-          ))}
-        </div>
+        <p className="mt-3 text-[15px] leading-[1.65] text-[#5A5A6E] dark:text-[#A8B0A6] line-clamp-3">
+          {post.summary
+            .split("\n")
+            .filter(Boolean)
+            .map((line) => line.replace(/^- /, "").trim())
+            .join(" ")}
+        </p>
 
         <div className="mt-4 text-[12px] text-[#9B9B8E] tracking-wide">
           Read full article &rarr;

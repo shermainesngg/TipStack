@@ -3,7 +3,7 @@ import path from "path";
 dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
 
 import { createClient } from "@supabase/supabase-js";
-import Anthropic from "@anthropic-ai/sdk";
+import { callClaudeCode } from "../src/lib/ai/claude-code";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,28 +11,21 @@ const supabase = createClient(
   { auth: { persistSession: false } }
 );
 
-const anthropic = new Anthropic();
-const MODEL = "claude-sonnet-4-6";
-
-const FEED_POST_TOOL = {
-  name: "store_feed_post" as const,
-  description: "Store a feed post summarizing what's new.",
-  input_schema: {
-    type: "object" as const,
-    properties: {
-      headline: {
-        type: "string",
-        description:
-          "One-line summary of what's new. Concise, informative, no clickbait.",
-      },
-      summary: {
-        type: "string",
-        description:
-          "2-4 bullet points with the key takeaways. Use markdown bullet syntax (- ).",
-      },
+const FEED_POST_SCHEMA = {
+  type: "object",
+  properties: {
+    headline: {
+      type: "string",
+      description:
+        "One-line summary of what's new. Concise, informative, no clickbait.",
     },
-    required: ["headline", "summary"],
+    summary: {
+      type: "string",
+      description:
+        "2-4 bullet points with the key takeaways. Use markdown bullet syntax (- ).",
+    },
   },
+  required: ["headline", "summary"],
 };
 
 const SYSTEM_PROMPT = `You are writing feed posts for TipStack, a platform that curates AI workflow tips.
@@ -44,7 +37,9 @@ A feed post is a short alert that tells practitioners what just changed. It link
 1. **Headline:** One sentence, 60-100 characters. State what's new, not what the article is about.
 2. **Summary:** 2-4 bullet points. Each bullet is one concrete takeaway. Use markdown bullets (- ).
 3. **For new articles:** Summarize the key insights.
-4. **No hype.** No "game-changing" or "revolutionary". Just state what's useful.`;
+4. **No hype.** No "game-changing" or "revolutionary". Just state what's useful.
+
+Respond with valid JSON matching the schema provided.`;
 
 async function main() {
   const { data: articles, error } = await supabase
@@ -70,16 +65,9 @@ async function main() {
     const platforms = [...new Set(sourceUrls.map((s: any) => s.platform))];
 
     try {
-      const response = await anthropic.messages.create({
-        model: MODEL,
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
-        tools: [FEED_POST_TOOL],
-        tool_choice: { type: "tool", name: "store_feed_post" },
-        messages: [
-          {
-            role: "user",
-            content: `Generate a feed post for this new article.
+      const result = await callClaudeCode<{ headline: string; summary: string }>({
+        systemPrompt: SYSTEM_PROMPT,
+        userMessage: `Generate a feed post for this new article.
 
 **Title:** ${article.title}
 **Summary:** ${article.summary ?? ""}
@@ -88,17 +76,8 @@ async function main() {
 ${sourceDesc}
 
 Platforms involved: ${platforms.join(", ")}`,
-          },
-        ],
+        jsonSchema: FEED_POST_SCHEMA,
       });
-
-      const toolBlock = response.content.find((b) => b.type === "tool_use");
-      if (!toolBlock || toolBlock.type !== "tool_use") {
-        console.error(`  SKIP "${article.title}": no tool_use block`);
-        continue;
-      }
-
-      const result = toolBlock.input as { headline: string; summary: string };
 
       const { error: insertError } = await supabase.from("feed_posts").insert({
         headline: result.headline,

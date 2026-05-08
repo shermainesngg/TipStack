@@ -3,8 +3,8 @@ import { fetchYouTubeItems } from "@/lib/sources/youtube";
 import { fetchRedditItems } from "@/lib/sources/reddit";
 import { fetchTwitterItems } from "@/lib/sources/twitter";
 import { fetchDocsItems, extractFeatureKeywords } from "@/lib/sources/docs";
-import { ingestItem } from "@/lib/pipeline/ingest";
-import { dedupAndFilter } from "@/lib/pipeline/dedup";
+import { ingestBatch } from "@/lib/pipeline/ingest";
+import { codeDedup } from "@/lib/pipeline/dedup";
 import { matchAndUpdateArticles } from "@/lib/pipeline/match-articles";
 import { generateFeedPosts } from "@/lib/pipeline/generate-feed-posts";
 import { notifyPipelineComplete } from "@/lib/pipeline/notify";
@@ -31,7 +31,6 @@ export const pipelineFunction = inngest.createFunction(
     triggers: [
       { event: "pipeline/run" },
       { cron: "0 0 * * *" },  // 8 AM SGT (UTC+8)
-      { cron: "0 12 * * *" }, // 8 PM SGT (UTC+8)
     ],
   },
   async ({ step }) => {
@@ -74,28 +73,19 @@ export const pipelineFunction = inngest.createFunction(
       return { status: "no_new_items", batchDate };
     }
 
-    // ── Step 2: Extract each item (one Inngest step per item) ─────────────
+    // ── Step 2: Batch extract + ingest (5 items per Claude call, concurrent) ──
 
-    const extractResults: { url: string; rawContentId: string }[] = [];
-
-    for (const item of allItems) {
-      const rawContentId = await step.run(
-        `extract-${item.platform}-${encodeURIComponent(item.url).slice(0, 80)}`,
-        async () => {
-          return ingestItem(item, batchDate);
-        }
-      );
-
-      extractResults.push({ url: item.url, rawContentId });
-    }
-
-    // ── Step 3: Dedup + quality filter (single batch Claude call) ─────────
-
-    const keptIds = await step.run("dedup-and-filter", async () => {
-      return dedupAndFilter(batchDate);
+    const { ingested, failed } = await step.run("batch-extract", async () => {
+      return ingestBatch(allItems, batchDate);
     });
 
-    const itemsDiscarded = extractResults.length - keptIds.length;
+    // ── Step 3: Code-based dedup + quality filter (no Claude call) ────────
+
+    const { kept: keptIds } = await step.run("code-dedup", async () => {
+      return codeDedup(batchDate);
+    });
+
+    const itemsDiscarded = ingested.length - keptIds.length;
 
     if (keptIds.length === 0) {
       await step.run("notify-all-filtered", async () => {
