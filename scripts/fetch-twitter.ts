@@ -2,29 +2,14 @@ import fs from "fs";
 import path from "path";
 import { Scraper, SearchMode } from "@the-convocation/twitter-scraper";
 import { isUrlProcessed, isActionableAIContent, type FetchedItem } from "./lib/shared";
-
-const TWITTER_ACCOUNTS = [
-  { handle: "AnthropicAI", name: "Anthropic" },
-  { handle: "OpenAI", name: "OpenAI" },
-  { handle: "cursor_ai", name: "Cursor" },
-  { handle: "LangChainAI", name: "LangChain" },
-  { handle: "naboringn8n", name: "n8n" },
-  { handle: "mcaborkadam", name: "McKay Wrigley" },
-  { handle: "swyx", name: "swyx" },
-  { handle: "simonw", name: "Simon Willison" },
-];
-
-const TWITTER_TWEETS_PER_ACCOUNT = 20;
-const TWITTER_MIN_LIKES = 10;
-const TWITTER_SEARCH_QUERIES = [
-  "AI coding workflow tip",
-  "Claude Code tip",
-  "cursor AI tip",
-  "AI agent workflow",
-  "vibe coding",
-];
-const TWITTER_SEARCH_RESULTS_PER_QUERY = 20;
-const TWITTER_SEARCH_MIN_LIKES = 25;
+import {
+  MVP_TWITTER_ACCOUNTS,
+  TWITTER_TWEETS_PER_ACCOUNT,
+  TWITTER_MIN_LIKES,
+  TWITTER_SEARCH_QUERIES,
+  TWITTER_SEARCH_RESULTS_PER_QUERY,
+  TWITTER_SEARCH_MIN_LIKES,
+} from "../src/lib/sources/config";
 
 const OUTPUT_PATH = path.resolve(__dirname, "data", "fetched-twitter.json");
 
@@ -74,7 +59,7 @@ async function fetchViaXpoz(): Promise<FetchedItem[]> {
 
   const queries = [
     ...TWITTER_SEARCH_QUERIES,
-    ...TWITTER_ACCOUNTS.map((a) => `from:${a.handle}`),
+    ...MVP_TWITTER_ACCOUNTS.map((a) => `from:${a.handle}`),
   ];
 
   for (const query of queries) {
@@ -131,7 +116,7 @@ export async function fetchTwitter(): Promise<FetchedItem[]> {
     const seenUrls = new Set<string>();
 
     // ── Account feeds ──────────────────────────────────────────────────
-    for (const account of TWITTER_ACCOUNTS) {
+    for (const account of MVP_TWITTER_ACCOUNTS) {
       console.log(`\n  Account: @${account.handle}`);
       try {
         let count = 0;

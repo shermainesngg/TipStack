@@ -4,7 +4,7 @@ export type ContentStatus = "pending_review" | "published" | "rejected";
 
 export type RawContentStatus = "ingested" | "filtered" | "merged" | "discarded";
 
-export type Platform = "youtube" | "reddit" | "twitter" | "news" | "docs";
+export type Platform = "youtube" | "reddit" | "twitter" | "news" | "docs" | "github";
 
 export type ContentType = "quick_tip" | "deep_dive" | "roundup" | "update";
 
@@ -39,6 +39,7 @@ export interface Content {
   based_on_version?: string;
   last_rewritten_at?: string;
   sub_topic?: string;
+  skill_id?: string;
 }
 
 export type ContentSummary = Omit<Content, "body">;
@@ -137,6 +138,8 @@ export interface FeedPost {
   published_at: string;
   created_at: string;
   topic_slug?: string;
+  topic_category?: ContentCategory;
+  topic_sub_topic?: string;
 }
 
 // ─── Source Config Types ────────────────────────────────────────────────────
@@ -156,4 +159,54 @@ export interface TwitterAccountConfig {
   handle: string;
   name: string;
   tier: 1 | 2;
+}
+
+// ─── Skill Types ──────────────────────────────────────────────────────────
+
+export type SkillType =
+  | "design_systems"
+  | "claude_md_rules"
+  | "mcp_tools"
+  | "cli_tools"
+  | "workflow_automation"
+  | "testing_qa"
+  | "code_generation"
+  | "documentation";
+
+export interface Skill {
+  id: string;
+  name: string;
+  description: string | null;
+  summary: string | null;
+  use_case: string | null;
+  repo_url: string;
+  author: string;
+  skill_type: SkillType;
+  skill_subcategory: string | null;
+  stars: number;
+  last_updated: string | null;
+  install_command: string | null;
+  topics: string[];
+  readme_excerpt: string | null;
+  status: "active" | "archived" | "pending";
+  created_at: string;
+  updated_at: string;
+}
+
+export type SkillSummary = Pick<
+  Skill,
+  "id" | "name" | "description" | "repo_url" | "author" | "skill_type" | "skill_subcategory" | "stars" | "install_command"
+>;
+
+export interface FetchedSkillMeta {
+  repoUrl: string;
+  name: string;
+  author: string;
+  description: string;
+  stars: number;
+  lastUpdated: string | null;
+  topics: string[];
+  readmeExcerpt: string;
+  installCommand: string | null;
+  subcategory?: string;
 }

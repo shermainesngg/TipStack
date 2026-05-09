@@ -8,6 +8,7 @@ export interface CategoryConfig {
   tint: string;
   darkTint: string;
   accent: string;
+  subTopics: string[];
 }
 
 const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
@@ -20,6 +21,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#faf5ee]",
     darkTint: "dark:bg-[#2a2318]",
     accent: "text-[#9B6B2F]",
+    subTopics: ["New Releases", "Hooks & Config", "Sub-Agents", "Design Patterns", "CLI Usage"],
   },
   security_and_guardrails: {
     slug: "security_and_guardrails",
@@ -30,6 +32,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#faf0ef]",
     darkTint: "dark:bg-[#2e1e1c]",
     accent: "text-[#8B4A4A]",
+    subTopics: ["Permissions & Access", "API Key Security", "Production Guardrails", "Compliance"],
   },
   github_skills: {
     slug: "github_skills",
@@ -40,6 +43,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#f3eff8]",
     darkTint: "dark:bg-[#221e2e]",
     accent: "text-[#5E3F96]",
+    subTopics: ["Popular Skills", "Building Skills", "Skill Configuration", "Use Cases"],
   },
   prompting_and_rules: {
     slug: "prompting_and_rules",
@@ -50,6 +54,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#f9f5ec]",
     darkTint: "dark:bg-[#2a261a]",
     accent: "text-[#7B6230]",
+    subTopics: ["CLAUDE.md Patterns", "System Prompts", "Prompt Engineering", "Context Management"],
   },
   workflow_patterns: {
     slug: "workflow_patterns",
@@ -60,6 +65,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#eef5fa]",
     darkTint: "dark:bg-[#1a2530]",
     accent: "text-[#3D6080]",
+    subTopics: ["CI/CD Integration", "Multi-Agent Setups", "Automation", "Routines"],
   },
   mcp_and_integrations: {
     slug: "mcp_and_integrations",
@@ -70,6 +76,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#f0f8f2]",
     darkTint: "dark:bg-[#1a2b1e]",
     accent: "text-[#2D6040]",
+    subTopics: ["MCP Servers", "Tool Integrations", "API Connections", "Community Servers"],
   },
   debugging_and_testing: {
     slug: "debugging_and_testing",
@@ -80,6 +87,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#eff2fa]",
     darkTint: "dark:bg-[#1c2030]",
     accent: "text-[#4A5A8B]",
+    subTopics: ["Debugging Techniques", "Test Generation", "TDD Workflows", "Error Handling"],
   },
 };
 
@@ -93,6 +101,10 @@ export function getAllCategoryConfigs(): CategoryConfig[] {
 
 export function getAllCategorySlugs(): ContentCategory[] {
   return Object.keys(CATEGORIES) as ContentCategory[];
+}
+
+export function getAllowedSubTopics(slug: string): string[] {
+  return CATEGORIES[slug as ContentCategory]?.subTopics ?? [];
 }
 
 // ─── Activity filters per category ──────────────────────────────────────────

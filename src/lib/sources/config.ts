@@ -75,13 +75,31 @@ export const TWITTER_ACCOUNTS: TwitterAccountConfig[] = [
   { handle: "LangChainAI", name: "LangChain", tier: 1 },
   { handle: "naboringn8n", name: "n8n", tier: 1 },
   // Tier 1 — practitioners who share actionable workflows
-  { handle: "mcaborkadam", name: "McKay Wrigley", tier: 1 },
+  { handle: "mckaywrigley", name: "McKay Wrigley", tier: 1 },
   { handle: "swyx", name: "swyx", tier: 1 },
   { handle: "simonw", name: "Simon Willison", tier: 1 },
-  // Tier 2 — broader AI ecosystem
+  // Tier 1 — AI leaders & hands-on builders
+  { handle: "karpathy", name: "Andrej Karpathy", tier: 1 },
+  { handle: "addyosmani", name: "Addy Osmani", tier: 1 },
+  { handle: "alexalbert__", name: "Alex Albert", tier: 1 },
+  { handle: "rauchg", name: "Guillermo Rauch", tier: 1 },
+  { handle: "steipete", name: "Peter Steinberger", tier: 1 },
+  { handle: "levelsio", name: "Pieter Levels", tier: 1 },
+  { handle: "t3dotgg", name: "Theo Browne", tier: 1 },
+  { handle: "hwchase17", name: "Harrison Chase", tier: 1 },
+  // Tier 2 — broader AI ecosystem, researchers, company accounts
   { handle: "GoogleDeepMind", name: "Google DeepMind", tier: 2 },
   { handle: "huggingface", name: "Hugging Face", tier: 2 },
-  { handle: "replaborit", name: "Replit", tier: 2 },
+  { handle: "Replit", name: "Replit", tier: 2 },
+  { handle: "AndrewYNg", name: "Andrew Ng", tier: 2 },
+  { handle: "DrJimFan", name: "Jim Fan", tier: 2 },
+  { handle: "fchollet", name: "Francois Chollet", tier: 2 },
+  { handle: "OfficialLoganK", name: "Logan Kilpatrick", tier: 2 },
+  { handle: "DarioAmodei", name: "Dario Amodei", tier: 2 },
+  { handle: "vercel", name: "Vercel", tier: 2 },
+  { handle: "MistralAI", name: "Mistral AI", tier: 2 },
+  { handle: "GroqInc", name: "Groq", tier: 2 },
+  { handle: "crewAIInc", name: "CrewAI", tier: 2 },
 ];
 
 export const MVP_TWITTER_ACCOUNTS = TWITTER_ACCOUNTS.filter((a) => a.tier === 1);
@@ -106,6 +124,29 @@ export const TWITTER_SEARCH_RESULTS_PER_QUERY = 20;
 
 /** Minimum likes for search-discovered tweets */
 export const TWITTER_SEARCH_MIN_LIKES = 25;
+
+// ─── GitHub Skills Discovery ─────────────────────────────────────────────────
+
+export const GITHUB_SKILL_SEARCH_TOPICS = [
+  "claude-code-skill",
+  "claude-skill",
+  "claude-code",
+  "design-md",
+];
+
+export const GITHUB_SKILL_SEARCH_QUERIES = [
+  "claude code skill",
+  "claude-code skill in:name,description",
+  "CLAUDE.md skill template",
+];
+
+export const GITHUB_AWESOME_LISTS = [
+  "anthropics/awesome-claude-code",
+];
+
+export const GITHUB_MIN_STARS = 5;
+
+export const GITHUB_MAX_RESULTS_PER_QUERY = 30;
 
 // ─── Documentation / Official Sources ────────────────────────────────────────
 

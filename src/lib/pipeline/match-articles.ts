@@ -5,81 +5,84 @@ import {
   updateContentArticle,
   insertContent,
   updateRawContentStatus,
-  getSubTopicsForCategory,
 } from "@/lib/supabase/queries";
+import { getAllowedSubTopics } from "@/lib/categories";
 import type { RawContent, Content, ContentSummary, SourceUrl, FetchedItem, SynthesizedPiece } from "@/types";
 
-const RESYNTHESIZE_SCHEMA = {
-  type: "object",
-  properties: {
-    title: {
-      type: "string",
-      description: "Updated title (may stay the same if still accurate)",
-    },
-    summary: {
-      type: "string",
-      description: "Updated 2-3 sentence summary for card display",
-    },
-    body: {
-      type: "string",
-      description:
-        "Full rewritten article body in markdown. Rewrite from scratch incorporating all sources — do not append.",
-    },
-    tags_tool: {
-      type: "array",
-      items: { type: "string" },
-      description: "Updated tool tags (union of existing + new)",
-    },
-    tags_focus: {
-      type: "array",
-      items: { type: "string" },
-      description: "Updated focus tags",
-    },
-    tags_workflow: {
-      type: "array",
-      items: { type: "string" },
-      description: "Updated workflow tags",
-    },
-    tags_domain: {
-      type: "array",
-      items: { type: "string" },
-      description: "Updated domain tags",
-    },
-    community_notes: {
-      type: "array",
-      items: { type: "string" },
-      description: "Conflicting or supplementary community observations (if any)",
-    },
-    sub_topic: {
-      type: "string",
-      description: "Human-friendly sub-topic name (2-4 words, title case) for grouping within the category page",
-    },
-    sources_attribution: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          platform: { type: "string" },
-          creator: { type: "string" },
-          url: { type: "string" },
-          contribution_summary: { type: "string" },
-        },
-        required: ["platform", "creator", "url", "contribution_summary"],
+function buildResynthesizeSchema(allowedSubTopics: string[]) {
+  return {
+    type: "object",
+    properties: {
+      title: {
+        type: "string",
+        description: "Updated title (may stay the same if still accurate)",
       },
-      description: "Attribution for each source that contributed to this article",
+      summary: {
+        type: "string",
+        description: "Updated 2-3 sentence summary for card display",
+      },
+      body: {
+        type: "string",
+        description:
+          "Full rewritten article body in markdown. Rewrite from scratch incorporating all sources — do not append.",
+      },
+      tags_tool: {
+        type: "array",
+        items: { type: "string" },
+        description: "Updated tool tags (union of existing + new)",
+      },
+      tags_focus: {
+        type: "array",
+        items: { type: "string" },
+        description: "Updated focus tags",
+      },
+      tags_workflow: {
+        type: "array",
+        items: { type: "string" },
+        description: "Updated workflow tags",
+      },
+      tags_domain: {
+        type: "array",
+        items: { type: "string" },
+        description: "Updated domain tags",
+      },
+      community_notes: {
+        type: "array",
+        items: { type: "string" },
+        description: "Conflicting or supplementary community observations (if any)",
+      },
+      sub_topic: {
+        type: "string",
+        enum: allowedSubTopics,
+        description: "Sub-topic for grouping within the category page. MUST be one of the allowed values.",
+      },
+      sources_attribution: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            platform: { type: "string" },
+            creator: { type: "string" },
+            url: { type: "string" },
+            contribution_summary: { type: "string" },
+          },
+          required: ["platform", "creator", "url", "contribution_summary"],
+        },
+        description: "Attribution for each source that contributed to this article",
+      },
     },
-  },
-  required: [
-    "title",
-    "summary",
-    "body",
-    "tags_tool",
-    "tags_focus",
-    "tags_workflow",
-    "tags_domain",
-    "sub_topic",
-  ],
-};
+    required: [
+      "title",
+      "summary",
+      "body",
+      "tags_tool",
+      "tags_focus",
+      "tags_workflow",
+      "tags_domain",
+      "sub_topic",
+    ],
+  };
+}
 
 const RESYNTHESIZE_SYSTEM_PROMPT = `You are rewriting a living article for TipStack, a platform that curates actionable AI workflow tips.
 
@@ -94,48 +97,53 @@ You receive an existing published article and new source material that covers th
 5. **Format for scannability.** Use ## headings, bullet points, bold, and code blocks.
 6. **Keep it 300-1200 words.** Articles can grow but should stay focused.
 7. **Merge tags.** Return the union of existing and new tags where appropriate.
-8. **Sub-topic.** Assign or keep a human-friendly sub-topic name (2-4 words, title case) for grouping on the category page.
+8. **Sub-topic.** Pick a sub-topic from the allowed list provided. Do NOT invent new sub-topics.
 9. **Sources section.** Include a "Sources" section at the end listing: source type, creator name, and link.
 
 Respond with valid JSON matching the schema provided.`;
 
-const NEW_ARTICLE_SCHEMA = {
-  type: "object",
-  properties: {
-    title: { type: "string" },
-    slug: { type: "string", description: "URL-safe slug, lowercase, hyphens only" },
-    summary: { type: "string" },
-    body: { type: "string" },
-    content_type: {
-      type: "string",
-      enum: ["quick_tip", "deep_dive", "roundup", "update"],
+const ALL_CATEGORIES = [
+  "claude_code_features",
+  "security_and_guardrails",
+  "github_skills",
+  "prompting_and_rules",
+  "workflow_patterns",
+  "mcp_and_integrations",
+  "debugging_and_testing",
+] as const;
+
+function buildNewArticleSchema(allSubTopics: string[]) {
+  return {
+    type: "object",
+    properties: {
+      title: { type: "string" },
+      slug: { type: "string", description: "URL-safe slug, lowercase, hyphens only" },
+      summary: { type: "string" },
+      body: { type: "string" },
+      content_type: {
+        type: "string",
+        enum: ["quick_tip", "deep_dive", "roundup", "update"],
+      },
+      tags_tool: { type: "array", items: { type: "string" } },
+      tags_focus: { type: "array", items: { type: "string" } },
+      tags_workflow: { type: "array", items: { type: "string" } },
+      tags_domain: { type: "array", items: { type: "string" } },
+      tags_category: {
+        type: "string",
+        enum: [...ALL_CATEGORIES],
+      },
+      sub_topic: {
+        type: "string",
+        enum: allSubTopics,
+        description: "Sub-topic for grouping within the category page. MUST be one of the allowed values for the chosen category.",
+      },
     },
-    tags_tool: { type: "array", items: { type: "string" } },
-    tags_focus: { type: "array", items: { type: "string" } },
-    tags_workflow: { type: "array", items: { type: "string" } },
-    tags_domain: { type: "array", items: { type: "string" } },
-    tags_category: {
-      type: "string",
-      enum: [
-        "claude_code_features",
-        "security_and_guardrails",
-        "github_skills",
-        "prompting_and_rules",
-        "workflow_patterns",
-        "mcp_and_integrations",
-        "debugging_and_testing",
-      ],
-    },
-    sub_topic: {
-      type: "string",
-      description: "Human-friendly sub-topic name (2-4 words, title case) for grouping within the category page. Examples: 'System Prompts', 'Hook Patterns', 'Git Workflows'.",
-    },
-  },
-  required: [
-    "title", "slug", "summary", "body", "content_type",
-    "tags_tool", "tags_focus", "tags_workflow", "tags_domain", "tags_category", "sub_topic",
-  ],
-};
+    required: [
+      "title", "slug", "summary", "body", "content_type",
+      "tags_tool", "tags_focus", "tags_workflow", "tags_domain", "tags_category", "sub_topic",
+    ],
+  };
+}
 
 const SPLIT_SCHEMA = {
   type: "object",
@@ -292,10 +300,7 @@ ${e.tips.map((t) => `- ${t}`).join("\n")}`;
   }));
   const allSourceUrls = [...existingSourceUrls, ...newSourceUrls];
 
-  const existingSubTopics = await getSubTopicsForCategory(existing.tags_category);
-  const subTopicContext = existingSubTopics.length > 0
-    ? `\n\n## Existing Sub-Topics for This Category\n${existingSubTopics.join(", ")}\n\nPrefer using an existing sub-topic if the article fits. Only create a new one if genuinely novel.`
-    : "";
+  const allowedSubTopics = getAllowedSubTopics(existing.tags_category);
 
   const userMessage = `Rewrite this living article from scratch incorporating all source material.
 
@@ -309,7 +314,10 @@ ${existing.body}
 
 ## New Source Material
 
-${newMaterial}${subTopicContext}`;
+${newMaterial}
+
+## Allowed Sub-Topics
+You MUST pick one of these: ${allowedSubTopics.join(", ")}`;
 
   const result = await callClaudeCode<{
     title: string;
@@ -325,8 +333,12 @@ ${newMaterial}${subTopicContext}`;
   }>({
     systemPrompt: RESYNTHESIZE_SYSTEM_PROMPT,
     userMessage,
-    jsonSchema: RESYNTHESIZE_SCHEMA,
+    jsonSchema: buildResynthesizeSchema(allowedSubTopics),
   });
+
+  if (!allowedSubTopics.includes(result.sub_topic)) {
+    result.sub_topic = allowedSubTopics[0];
+  }
 
   let finalBody = result.body;
   if (result.community_notes && result.community_notes.length > 0) {
@@ -365,13 +377,10 @@ Tags: tool=[${e.tags_tool.join(", ")}] focus=[${e.tags_focus.join(", ")}] workfl
     })
     .join("\n\n");
 
-  const inferredCategory = items[0]?.raw_extract.tags_tool[0]
-    ? "claude_code_features"
-    : "claude_code_features";
-  const existingSubTopics = await getSubTopicsForCategory(inferredCategory);
-  const subTopicContext = existingSubTopics.length > 0
-    ? `\n\nExisting sub-topics for this category: ${existingSubTopics.join(", ")}. Prefer using an existing sub-topic if the article fits.`
-    : "";
+  const subTopicsByCategory = ALL_CATEGORIES.map(
+    (cat) => `- ${cat}: ${getAllowedSubTopics(cat).join(", ")}`
+  ).join("\n");
+  const allSubTopics = ALL_CATEGORIES.flatMap((cat) => getAllowedSubTopics(cat));
 
   const piece = await callClaudeCode<{
     title: string;
@@ -386,10 +395,20 @@ Tags: tool=[${e.tags_tool.join(", ")}] focus=[${e.tags_focus.join(", ")}] workfl
     tags_category: string;
     sub_topic: string;
   }>({
-    systemPrompt: `You are a content synthesizer for TipStack. Create a single publishable article from the provided source material. Write for AI tool practitioners — specific techniques, real commands, actionable guidance. Use markdown with ## headings, bullets, bold. 300-800 words. Assign a sub_topic (2-4 words, title case) for grouping on the category page.${subTopicContext}\n\nRespond with valid JSON matching the schema provided.`,
+    systemPrompt: `You are a content synthesizer for TipStack. Create a single publishable article from the provided source material. Write for AI tool practitioners — specific techniques, real commands, actionable guidance. Use markdown with ## headings, bullets, bold. 300-800 words.
+
+You MUST pick sub_topic from the allowed list for the category you choose:
+${subTopicsByCategory}
+
+Respond with valid JSON matching the schema provided.`,
     userMessage: `Create a new article from these ${items.length} source items:\n\n${itemDescriptions}`,
-    jsonSchema: NEW_ARTICLE_SCHEMA,
+    jsonSchema: buildNewArticleSchema(allSubTopics),
   });
+
+  const categorySubTopics = getAllowedSubTopics(piece.tags_category);
+  if (!categorySubTopics.includes(piece.sub_topic)) {
+    piece.sub_topic = categorySubTopics[0] ?? piece.sub_topic;
+  }
 
   const sourceUrls: SourceUrl[] = items.map((i) => ({
     url: i.source_url,

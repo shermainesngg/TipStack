@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "./server";
 import { createBrowserClient } from "./browser";
-import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost } from "@/types";
+import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost, Skill, SkillType, FetchedSkillMeta } from "@/types";
 import { normalizeToolTag, expandToolAliases } from "@/lib/tools";
 
 const CARD_COLUMNS = "id, title, slug, summary, content_type, status, tags_tool, tags_focus, tags_workflow, tags_domain, tags_category, source_urls, created_at, published_at";
@@ -117,6 +117,7 @@ export async function insertContent(params: {
   tagsCategory: string;
   sourceUrls: SourceUrl[];
   subTopic?: string;
+  skillId?: string;
 }): Promise<string> {
   const insertData: Record<string, unknown> = {
     title: params.title,
@@ -135,6 +136,10 @@ export async function insertContent(params: {
 
   if (params.subTopic) {
     insertData.sub_topic = params.subTopic;
+  }
+
+  if (params.skillId) {
+    insertData.skill_id = params.skillId;
   }
 
   const { data, error } = await getServiceClient()
@@ -566,7 +571,7 @@ export async function getFeedPosts(
 
   let query = getReadClient()
     .from("feed_posts")
-    .select(`${FEED_COLUMNS}, content!inner(slug)`)
+    .select(`${FEED_COLUMNS}, content!inner(slug, tags_category, sub_topic)`)
     .gte("published_at", thirtyDaysAgo)
     .order("published_at", { ascending: false })
     .limit(limit);
@@ -582,10 +587,15 @@ export async function getFeedPosts(
   const { data, error } = await query;
   if (error) throw new Error(`Failed to fetch feed posts: ${error.message}`);
 
-  return (data as Record<string, unknown>[]).map((row) => ({
-    ...(row as unknown as FeedPost),
-    topic_slug: (row.content as { slug: string })?.slug,
-  }));
+  return (data as Record<string, unknown>[]).map((row) => {
+    const content = row.content as { slug: string; tags_category: string; sub_topic: string | null } | null;
+    return {
+      ...(row as unknown as FeedPost),
+      topic_slug: content?.slug,
+      topic_category: content?.tags_category as FeedPost["topic_category"],
+      topic_sub_topic: content?.sub_topic ?? undefined,
+    };
+  });
 }
 
 // ─── topic matching (service client — pipeline only) ────────────────────────
@@ -733,6 +743,87 @@ export async function getPublishedContentBySubTopic(
     .order("published_at", { ascending: false });
 
   if (error) throw new Error(`Failed to fetch content by sub-topic: ${error.message}`);
+  return data as Content[];
+}
+
+// ─── skills ────────────────────────────────────────────────────────────────
+
+/** Upsert a skill — insert or update on repo_url conflict */
+export async function upsertSkill(meta: FetchedSkillMeta & { skillType: SkillType; skillSubcategory?: string; summary?: string; useCase?: string }): Promise<string> {
+  const { data, error } = await getServiceClient()
+    .from("skills")
+    .upsert(
+      {
+        name: meta.name,
+        description: meta.description,
+        repo_url: meta.repoUrl,
+        author: meta.author,
+        skill_type: meta.skillType,
+        skill_subcategory: meta.skillSubcategory ?? null,
+        summary: meta.summary ?? null,
+        use_case: meta.useCase ?? null,
+        stars: meta.stars,
+        last_updated: meta.lastUpdated,
+        install_command: meta.installCommand,
+        topics: meta.topics,
+        readme_excerpt: meta.readmeExcerpt?.slice(0, 2000) ?? null,
+        status: "active",
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "repo_url" }
+    )
+    .select("id")
+    .single();
+
+  if (error) throw new Error(`Failed to upsert skill: ${error.message}`);
+  return data.id;
+}
+
+/** Fetch active skills, optionally filtered by type */
+export async function getActiveSkills(skillType?: SkillType): Promise<Skill[]> {
+  let query = getReadClient()
+    .from("skills")
+    .select("*")
+    .eq("status", "active")
+    .order("stars", { ascending: false });
+
+  if (skillType) {
+    query = query.eq("skill_type", skillType);
+  }
+
+  const { data, error } = await query;
+  if (error) throw new Error(`Failed to fetch skills: ${error.message}`);
+  return data as Skill[];
+}
+
+/** Fetch active skills grouped by skill_type */
+export async function getSkillsByType(): Promise<Record<string, Skill[]>> {
+  const { data, error } = await getReadClient()
+    .from("skills")
+    .select("*")
+    .eq("status", "active")
+    .order("stars", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch skills by type: ${error.message}`);
+
+  const grouped: Record<string, Skill[]> = {};
+  for (const skill of data as Skill[]) {
+    if (!grouped[skill.skill_type]) grouped[skill.skill_type] = [];
+    grouped[skill.skill_type].push(skill);
+  }
+  return grouped;
+}
+
+/** Fetch published content linked to a specific skill */
+export async function getContentForSkill(skillId: string): Promise<Content[]> {
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("*")
+    .eq("status", "published")
+    .eq("skill_id", skillId)
+    .order("published_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch content for skill: ${error.message}`);
   return data as Content[];
 }
 

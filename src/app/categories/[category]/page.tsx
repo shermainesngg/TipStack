@@ -5,6 +5,7 @@ import {
   getPublishedContentByCategoryAndActivity,
   getActiveFiltersForCategory,
   getCategoryToolsAndFreshness,
+  getSkillsByType,
   type CategoryMeta,
 } from "@/lib/supabase/queries";
 import { formatFreshness } from "@/lib/utils";
@@ -16,7 +17,7 @@ import {
 } from "@/lib/categories";
 import { getCategoryLayout } from "@/components/category-layouts";
 import { CategoryFilter } from "@/components/tool-filter";
-import type { ContentCategory } from "@/types";
+import type { ContentCategory, Skill } from "@/types";
 import {
   Code2,
   Workflow,
@@ -65,6 +66,14 @@ async function getMeta() {
   return getCategoryToolsAndFreshness();
 }
 
+async function getSkillsGrouped() {
+  "use cache";
+  cacheTag("content");
+  cacheLife("hours");
+
+  return getSkillsByType();
+}
+
 export default async function CategoryPage({
   params,
   searchParams,
@@ -92,13 +101,32 @@ export default async function CategoryPage({
   let content: Awaited<ReturnType<typeof getCategoryContent>> = [];
   let activeFilterKeys: string[] = [];
   let allMeta: Record<string, CategoryMeta> = {};
+  let skillsByType: Record<string, Skill[]> = {};
 
   try {
-    [content, activeFilterKeys, allMeta] = await Promise.all([
+    const isGithubSkills = category === "github_skills";
+    const promises: [
+      Promise<Awaited<ReturnType<typeof getCategoryContent>>>,
+      Promise<string[]>,
+      Promise<Record<string, CategoryMeta>>,
+      ...Promise<Record<string, Skill[]>>[],
+    ] = [
       getCategoryContent(category, activityTags),
       getActiveFilters(category),
       getMeta(),
-    ]);
+    ];
+
+    if (isGithubSkills) {
+      promises.push(getSkillsGrouped());
+    }
+
+    const results = await Promise.all(promises);
+    content = results[0];
+    activeFilterKeys = results[1];
+    allMeta = results[2];
+    if (isGithubSkills && results[3]) {
+      skillsByType = results[3];
+    }
   } catch {
     // Supabase not configured
   }
@@ -149,7 +177,7 @@ export default async function CategoryPage({
           </div>
         )}
 
-        {content.length === 0 ? (
+        {content.length === 0 && Object.keys(skillsByType).length === 0 ? (
           <div className="py-24 text-left max-w-[40ch]">
             <p className="text-2xl font-heading font-bold text-[#1A1A2E] dark:text-[#EDF2EC]">
               {activeFilter
@@ -163,7 +191,7 @@ export default async function CategoryPage({
             </p>
           </div>
         ) : (
-          <Layout content={content} />
+          <Layout content={content} skillsByType={category === "github_skills" ? skillsByType : undefined} />
         )}
       </div>
     </div>

@@ -1,12 +1,18 @@
-import type { ContentCategory, Content } from "@/types";
+import type { ContentCategory, Content, Skill } from "@/types";
 import { DynamicSubTopicLayout } from "./dynamic-subtopic-layout";
+import { GithubSkillsLayout } from "./github-skills-layout";
 
-type LayoutComponent = React.ComponentType<{ content: Content[] }>;
+export type LayoutProps = {
+  content: Content[];
+  skillsByType?: Record<string, Skill[]>;
+};
+
+type LayoutComponent = React.ComponentType<LayoutProps>;
 
 const LAYOUT_MAP: Record<ContentCategory, LayoutComponent> = {
   claude_code_features: DynamicSubTopicLayout,
   security_and_guardrails: DynamicSubTopicLayout,
-  github_skills: DynamicSubTopicLayout,
+  github_skills: GithubSkillsLayout,
   prompting_and_rules: DynamicSubTopicLayout,
   workflow_patterns: DynamicSubTopicLayout,
   mcp_and_integrations: DynamicSubTopicLayout,

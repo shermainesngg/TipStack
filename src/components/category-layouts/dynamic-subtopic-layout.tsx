@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { TagPill } from "@/components/tag-pill";
-import type { Content } from "@/types";
+import { getCategoryConfig } from "@/lib/categories";
+import type { Content, ContentType } from "@/types";
 
 const containerVariants = {
   hidden: {},
@@ -19,6 +20,13 @@ const itemVariants = {
   },
 };
 
+const CONTENT_TYPE_LABELS: Record<ContentType, { label: string; color: string; darkColor: string }> = {
+  quick_tip: { label: "Quick Tip", color: "text-[#2D6040]", darkColor: "dark:text-[#7EBE8E]" },
+  deep_dive: { label: "Deep Dive", color: "text-[#5E3F96]", darkColor: "dark:text-[#B89DD4]" },
+  roundup: { label: "Roundup", color: "text-[#7B6230]", darkColor: "dark:text-[#D4B875]" },
+  update: { label: "Update", color: "text-[#8B4A4A]", darkColor: "dark:text-[#E5A097]" },
+};
+
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "";
   return new Date(dateStr).toLocaleDateString("en-US", {
@@ -27,18 +35,94 @@ function formatDate(dateStr: string | null): string {
   });
 }
 
-function ArticleCard({ content }: { content: Content }) {
-  const topTag = content.tags_tool[0];
+function isNew(dateStr: string | null): boolean {
+  if (!dateStr) return false;
+  const published = new Date(dateStr);
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  return published > sevenDaysAgo;
+}
+
+function FeaturedArticleCard({ content, tint, darkTint }: { content: Content; tint: string; darkTint: string }) {
+  const topToolTag = content.tags_tool[0];
+  const topFocusTag = content.tags_focus[0];
+  const typeInfo = CONTENT_TYPE_LABELS[content.content_type];
+  const sourceCount = content.source_urls?.length ?? 0;
+  const fresh = isNew(content.published_at);
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={`/content/${content.slug}`} className="block group md:col-span-2">
       <motion.article
-        className="rounded-2xl bg-[#faf5ee] dark:bg-[#2a2318] p-5
-          group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]
+        className="rounded-2xl bg-[#fafcfa] dark:bg-[#1E241E] p-6 lg:p-8
+          shadow-[0_1px_3px_rgba(0,0,0,0.04)]
+          group-hover:shadow-[0_4px_12px_rgba(0,0,0,0.06),0_16px_40px_rgba(0,0,0,0.1)]
           transition-shadow duration-300 ease-out h-full flex flex-col"
         variants={itemVariants}
         whileHover={{ y: -3, transition: { type: "spring", stiffness: 300, damping: 20 } }}
       >
+        <div className="flex items-center gap-2 mb-3">
+          {typeInfo && (
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${typeInfo.color} ${typeInfo.darkColor}`}>
+              {typeInfo.label}
+            </span>
+          )}
+          {fresh && (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8B6E4E] dark:text-[#D4B875]">
+              New
+            </span>
+          )}
+        </div>
+
+        <h3 className="font-heading font-bold text-lg leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2">
+          {content.title}
+        </h3>
+
+        <p className="mt-2 text-[14px] leading-[1.7] text-[#5A5A6E] dark:text-[#A8B0A6] line-clamp-3">
+          {content.summary}
+        </p>
+
+        <div className="mt-auto pt-4 flex items-center gap-2 flex-wrap">
+          {topToolTag && <TagPill label={topToolTag} category="tool" />}
+          {topFocusTag && <TagPill label={topFocusTag} category="focus" />}
+          <span className="text-[11px] text-[#9B9B8E] ml-auto flex items-center gap-3">
+            {sourceCount > 1 && <span>{sourceCount} sources</span>}
+            {formatDate(content.updated_at ?? content.published_at)}
+          </span>
+        </div>
+      </motion.article>
+    </Link>
+  );
+}
+
+function ArticleCard({ content, tint, darkTint }: { content: Content; tint: string; darkTint: string }) {
+  const topToolTag = content.tags_tool[0];
+  const topFocusTag = content.tags_focus[0];
+  const typeInfo = CONTENT_TYPE_LABELS[content.content_type];
+  const sourceCount = content.source_urls?.length ?? 0;
+  const fresh = isNew(content.published_at);
+
+  return (
+    <Link href={`/content/${content.slug}`} className="block group">
+      <motion.article
+        className={`rounded-2xl ${tint} ${darkTint} p-5
+          group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]
+          transition-shadow duration-300 ease-out h-full flex flex-col`}
+        variants={itemVariants}
+        whileHover={{ y: -3, transition: { type: "spring", stiffness: 300, damping: 20 } }}
+      >
+        <div className="flex items-center gap-2 mb-1.5">
+          {typeInfo && (
+            <span className={`text-[10px] font-semibold uppercase tracking-[0.12em] ${typeInfo.color} ${typeInfo.darkColor}`}>
+              {typeInfo.label}
+            </span>
+          )}
+          {fresh && (
+            <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#8B6E4E] dark:text-[#D4B875]">
+              New
+            </span>
+          )}
+        </div>
+
         <h3 className="font-heading font-semibold text-[15px] leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2">
           {content.title}
         </h3>
@@ -47,9 +131,11 @@ function ArticleCard({ content }: { content: Content }) {
           {content.summary}
         </p>
 
-        <div className="mt-auto pt-3 flex items-center gap-2">
-          {topTag && <TagPill label={topTag} category="tool" />}
-          <span className="text-[11px] text-[#9B9B8E]">
+        <div className="mt-auto pt-3 flex items-center gap-2 flex-wrap">
+          {topToolTag && <TagPill label={topToolTag} category="tool" />}
+          {topFocusTag && !topToolTag && <TagPill label={topFocusTag} category="focus" />}
+          <span className="text-[11px] text-[#9B9B8E] ml-auto flex items-center gap-3">
+            {sourceCount > 1 && <span>{sourceCount} sources</span>}
             {formatDate(content.updated_at ?? content.published_at)}
           </span>
         </div>
@@ -63,6 +149,8 @@ interface SubTopicGroup {
   articles: Content[];
 }
 
+const MIN_GROUP_SIZE = 2;
+
 function groupBySubTopic(content: Content[]): SubTopicGroup[] {
   const groups = new Map<string, Content[]>();
 
@@ -72,7 +160,7 @@ function groupBySubTopic(content: Content[]): SubTopicGroup[] {
     groups.get(key)!.push(article);
   }
 
-  return Array.from(groups.entries())
+  const sorted = Array.from(groups.entries())
     .map(([name, articles]) => ({
       name,
       articles: articles.sort((a, b) => {
@@ -86,10 +174,29 @@ function groupBySubTopic(content: Content[]): SubTopicGroup[] {
       const bLatest = b.articles[0]?.updated_at ?? b.articles[0]?.published_at ?? "";
       return bLatest.localeCompare(aLatest);
     });
+
+  const big: SubTopicGroup[] = [];
+  const overflow: Content[] = [];
+  for (const group of sorted) {
+    if (group.articles.length >= MIN_GROUP_SIZE) {
+      big.push(group);
+    } else {
+      overflow.push(...group.articles);
+    }
+  }
+  if (overflow.length > 0) {
+    big.push({ name: "More Topics", articles: overflow });
+  }
+  return big;
 }
 
-export function DynamicSubTopicLayout({ content }: { content: Content[] }) {
+export function DynamicSubTopicLayout({ content }: { content: Content[]; skillsByType?: Record<string, unknown> }) {
   if (content.length === 0) return null;
+
+  const category = content[0].tags_category;
+  const config = getCategoryConfig(category);
+  const tint = config?.tint ?? "bg-[#faf5ee]";
+  const darkTint = config?.darkTint ?? "dark:bg-[#2a2318]";
 
   const subTopics = groupBySubTopic(content);
   const hasSubTopics = subTopics.length > 1 || (subTopics.length === 1 && subTopics[0].name !== "General");
@@ -102,16 +209,20 @@ export function DynamicSubTopicLayout({ content }: { content: Content[] }) {
         initial="hidden"
         animate="visible"
       >
-        {content.map((item) => (
-          <ArticleCard key={item.id} content={item} />
-        ))}
+        {content.map((item, i) =>
+          i === 0 ? (
+            <FeaturedArticleCard key={item.id} content={item} tint={tint} darkTint={darkTint} />
+          ) : (
+            <ArticleCard key={item.id} content={item} tint={tint} darkTint={darkTint} />
+          )
+        )}
       </motion.div>
     );
   }
 
   return (
     <motion.div
-      className="space-y-10"
+      className="space-y-12"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -139,16 +250,20 @@ export function DynamicSubTopicLayout({ content }: { content: Content[] }) {
           id={name.toLowerCase().replace(/\s+/g, "-")}
           className="scroll-mt-24"
         >
-          <h2 className="font-heading font-bold text-[18px] text-[#1A1A2E] dark:text-[#EDF2EC] mb-4">
+          <h2 className="font-heading font-bold text-[18px] text-[#1A1A2E] dark:text-[#EDF2EC] mb-5">
             {name}
           </h2>
           <motion.div
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
             variants={containerVariants}
           >
-            {articles.map((article) => (
-              <ArticleCard key={article.id} content={article} />
-            ))}
+            {articles.map((article, i) =>
+              i === 0 && articles.length >= 3 ? (
+                <FeaturedArticleCard key={article.id} content={article} tint={tint} darkTint={darkTint} />
+              ) : (
+                <ArticleCard key={article.id} content={article} tint={tint} darkTint={darkTint} />
+              )
+            )}
           </motion.div>
         </section>
       ))}

@@ -1,3 +1,6 @@
+// Shim server-only BEFORE any pipeline imports
+import "./lib/shim-server-only";
+
 import dotenv from "dotenv";
 import path from "path";
 import fs from "fs";
@@ -8,10 +11,12 @@ import { ingestBatch } from "../src/lib/pipeline/ingest";
 import { codeDedup } from "../src/lib/pipeline/dedup";
 import { matchAndUpdateArticles } from "../src/lib/pipeline/match-articles";
 import { generateFeedPosts } from "../src/lib/pipeline/generate-feed-posts";
+import { populateSkills } from "../src/lib/pipeline/populate-skills";
 import { isUrlProcessed, updateRawContentStatus } from "../src/lib/supabase/queries";
-import type { FetchedItem } from "../src/types";
+import type { FetchedItem, FetchedSkillMeta } from "../src/types";
 
 const INPUT_PATH = path.resolve(__dirname, "data", "fetched.json");
+const SKILL_META_PATH = path.resolve(__dirname, "data", "skill-meta.json");
 const BATCH_DATE = new Date().toISOString().split("T")[0];
 
 async function main() {
@@ -52,6 +57,17 @@ async function main() {
   if (ingested.length === 0) {
     console.log("No items ingested. Done.");
     return;
+  }
+
+  // Step 2.5: Populate skills table from GitHub skill metadata
+  if (fs.existsSync(SKILL_META_PATH)) {
+    console.log("Populating skills table...");
+    const metaObj: Record<string, FetchedSkillMeta> = JSON.parse(
+      fs.readFileSync(SKILL_META_PATH, "utf-8")
+    );
+    const skillMetas = new Map(Object.entries(metaObj));
+    const skillMap = await populateSkills(skillMetas);
+    console.log(`  Skills populated: ${skillMap.size}\n`);
   }
 
   // Step 3: Code-based dedup + quality filter (no Claude call — uses quality_score from extraction)

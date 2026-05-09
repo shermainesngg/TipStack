@@ -4,7 +4,7 @@ import {
   updateRawContentStatus,
   getPublishedContent,
 } from "@/lib/supabase/queries";
-import type { DedupResult, RawContent, Platform } from "@/types";
+import type { DedupResult, RawContent } from "@/types";
 
 const PLATFORM_THRESHOLDS: Record<string, number> = {
   youtube: 5,
@@ -12,6 +12,7 @@ const PLATFORM_THRESHOLDS: Record<string, number> = {
   reddit: 7,
   twitter: 7,
   docs: 3,
+  github: 4,
 };
 
 function titleSimilarity(a: string, b: string): number {
@@ -192,6 +193,7 @@ ${batchDescription}`;
     reddit: 7,
     twitter: 7,
     docs: 3,
+    github: 4,
   };
 
   for (const item of result.items) {

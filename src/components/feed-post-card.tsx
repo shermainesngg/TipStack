@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { FeedPost, Platform } from "@/types";
+import type { FeedPost, Platform, ContentCategory } from "@/types";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
   youtube: "YouTube",
@@ -7,6 +7,7 @@ const PLATFORM_LABELS: Record<Platform, string> = {
   twitter: "X",
   news: "News",
   docs: "Docs",
+  github: "GitHub",
 };
 
 const PLATFORM_COLORS: Record<Platform, string> = {
@@ -15,6 +16,27 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   twitter: "text-[#5E3F96] bg-[#e0d8ef] dark:text-[#B89DD4] dark:bg-[#2A1F3D]",
   news: "text-[#2D6040] bg-[#d2e8d6] dark:text-[#7EBE8E] dark:bg-[#1A3327]",
   docs: "text-[#4A6B8B] bg-[#d8e4f0] dark:text-[#97C5E5] dark:bg-[#1F2E3D]",
+  github: "text-[#5A5A6E] bg-[#e0e4e0] dark:text-[#C8D0C6] dark:bg-[#2A322A]",
+};
+
+const CATEGORY_LABELS: Record<ContentCategory, string> = {
+  claude_code_features: "Claude Code",
+  security_and_guardrails: "Security",
+  github_skills: "GitHub Skills",
+  prompting_and_rules: "Prompting & Rules",
+  workflow_patterns: "Workflows",
+  mcp_and_integrations: "MCP",
+  debugging_and_testing: "Debugging & Testing",
+};
+
+const CATEGORY_TAG_COLORS: Record<ContentCategory, string> = {
+  claude_code_features: "text-[#9B6B2F] bg-[#faf5ee] dark:text-[#D4B875] dark:bg-[#2a2318]",
+  security_and_guardrails: "text-[#8B4A4A] bg-[#faf0ef] dark:text-[#E5A097] dark:bg-[#2e1e1c]",
+  github_skills: "text-[#5E3F96] bg-[#f3eff8] dark:text-[#B89DD4] dark:bg-[#221e2e]",
+  prompting_and_rules: "text-[#7B6230] bg-[#f9f5ec] dark:text-[#D4B875] dark:bg-[#2a261a]",
+  workflow_patterns: "text-[#3D6080] bg-[#eef5fa] dark:text-[#97C5E5] dark:bg-[#1a2530]",
+  mcp_and_integrations: "text-[#2D6040] bg-[#f0f8f2] dark:text-[#7EBE8E] dark:bg-[#1a2b1e]",
+  debugging_and_testing: "text-[#4A5A8B] bg-[#eff2fa] dark:text-[#97A5D4] dark:bg-[#1c2030]",
 };
 
 function formatFeedTime(dateStr: string): string {
@@ -87,8 +109,24 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
             .join(" ")}
         </p>
 
-        <div className="mt-4 text-[12px] text-[#9B9B8E] tracking-wide">
-          Read full article &rarr;
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {post.topic_category && (
+              <span
+                className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide ${CATEGORY_TAG_COLORS[post.topic_category] ?? ""}`}
+              >
+                {CATEGORY_LABELS[post.topic_category] ?? post.topic_category}
+              </span>
+            )}
+            {post.topic_sub_topic && (
+              <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide text-[#7B6230] bg-[#f0e8d4] dark:text-[#D4B875] dark:bg-[#2E2818]">
+                {post.topic_sub_topic}
+              </span>
+            )}
+          </div>
+          <span className="text-[12px] text-[#9B9B8E] tracking-wide whitespace-nowrap">
+            Read article &rarr;
+          </span>
         </div>
       </article>
     </Link>
