@@ -1,12 +1,12 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { cacheTag, cacheLife } from "next/cache";
+import type { Metadata } from "next";
 import {
   getPublishedContentByCategoryAndActivity,
   getActiveFiltersForCategory,
-  getCategoryToolsAndFreshness,
+  getCategoryFreshness,
   getSkillsByType,
-  type CategoryMeta,
 } from "@/lib/supabase/queries";
 import { formatFreshness } from "@/lib/utils";
 import {
@@ -14,8 +14,10 @@ import {
   getAllCategorySlugs,
   getCategoryFilters,
   getCategoryFilterByKey,
+  fromUrlSlug,
+  toUrlSlug,
 } from "@/lib/categories";
-import { getCategoryLayout } from "@/components/category-layouts";
+import { CategoryLayoutRenderer } from "@/components/category-layouts";
 import { CategoryFilter } from "@/components/tool-filter";
 import type { ContentCategory, Skill } from "@/types";
 import {
@@ -38,6 +40,30 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   BookOpen,
 };
 
+// ─── Static generation ──────────────────────────────────────────────────────
+
+export function generateStaticParams() {
+  return getAllCategorySlugs().map((slug) => ({
+    category: toUrlSlug(slug),
+  }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ category: string }>;
+}): Promise<Metadata> {
+  const { category: rawCategory } = await params;
+  const config = getCategoryConfig(fromUrlSlug(rawCategory));
+  if (!config) return {};
+  return {
+    title: `${config.label} — TipStack`,
+    description: config.description,
+  };
+}
+
+// ─── Cached data functions ──────────────────────────────────────────────────
+
 async function getCategoryContent(
   category: string,
   activityTags: string[] | null
@@ -58,12 +84,12 @@ async function getActiveFilters(category: string) {
   return getActiveFiltersForCategory(category, filters);
 }
 
-async function getMeta() {
+async function getCachedFreshness(category: string) {
   "use cache";
   cacheTag("content");
   cacheLife("hours");
 
-  return getCategoryToolsAndFreshness();
+  return getCategoryFreshness(category);
 }
 
 async function getSkillsGrouped() {
@@ -74,6 +100,8 @@ async function getSkillsGrouped() {
   return getSkillsByType();
 }
 
+// ─── Page ───────────────────────────────────────────────────────────────────
+
 export default async function CategoryPage({
   params,
   searchParams,
@@ -81,9 +109,10 @@ export default async function CategoryPage({
   params: Promise<{ category: string }>;
   searchParams: Promise<{ activity?: string }>;
 }) {
-  const { category } = await params;
+  const { category: rawCategory } = await params;
   const { activity } = await searchParams;
 
+  const category = fromUrlSlug(rawCategory);
   const validSlugs = getAllCategorySlugs();
   if (!validSlugs.includes(category as ContentCategory)) {
     notFound();
@@ -97,57 +126,39 @@ export default async function CategoryPage({
     ? getCategoryFilterByKey(category, activity)
     : undefined;
   const activityTags = activeFilter?.tags ?? null;
+  const isGithubSkills = category === "github_skills";
 
   let content: Awaited<ReturnType<typeof getCategoryContent>> = [];
   let activeFilterKeys: string[] = [];
-  let allMeta: Record<string, CategoryMeta> = {};
+  let freshness: string | null = null;
   let skillsByType: Record<string, Skill[]> = {};
 
   try {
-    const isGithubSkills = category === "github_skills";
-    const promises: [
-      Promise<Awaited<ReturnType<typeof getCategoryContent>>>,
-      Promise<string[]>,
-      Promise<Record<string, CategoryMeta>>,
-      ...Promise<Record<string, Skill[]>>[],
-    ] = [
+    const results = await Promise.all([
       getCategoryContent(category, activityTags),
       getActiveFilters(category),
-      getMeta(),
-    ];
+      getCachedFreshness(category),
+      isGithubSkills ? getSkillsGrouped() : Promise.resolve({} as Record<string, Skill[]>),
+    ]);
 
-    if (isGithubSkills) {
-      promises.push(getSkillsGrouped());
-    }
-
-    const results = await Promise.all(promises);
     content = results[0];
     activeFilterKeys = results[1];
-    allMeta = results[2];
-    if (isGithubSkills && results[3]) {
-      skillsByType = results[3];
-    }
+    freshness = results[2];
+    if (isGithubSkills) skillsByType = results[3];
   } catch {
     // Supabase not configured
   }
 
-  const categoryMeta = allMeta[category];
   const visibleFilters = allFilters.filter((f) =>
     activeFilterKeys.includes(f.key)
   );
 
-  const Layout = getCategoryLayout(category as ContentCategory);
-
   return (
     <div>
-      <div
-        className={`${config.tint} ${config.darkTint}`}
-      >
+      <div className={`${config.tint} ${config.darkTint}`}>
         <div className="mx-auto max-w-[1200px] px-5 pt-10 pb-8 lg:pt-16 lg:pb-10">
           <div className="flex items-center gap-2.5 mb-4">
-            {Icon && (
-              <Icon className={`size-5 ${config.accent}`} />
-            )}
+            {Icon && <Icon className={`size-5 ${config.accent}`} />}
             <h1
               className="font-heading font-extrabold tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] leading-[1.05]"
               style={{
@@ -162,7 +173,7 @@ export default async function CategoryPage({
           </p>
           <div className="mt-3 flex flex-wrap items-baseline gap-x-5 gap-y-1 text-[13px]">
             <span className="text-[#9B9B8E]">
-              {formatFreshness(categoryMeta?.latestPublishedAt ?? null)}
+              {formatFreshness(freshness)}
             </span>
           </div>
         </div>
@@ -191,7 +202,11 @@ export default async function CategoryPage({
             </p>
           </div>
         ) : (
-          <Layout content={content} skillsByType={category === "github_skills" ? skillsByType : undefined} />
+          <CategoryLayoutRenderer
+            category={category as ContentCategory}
+            content={content}
+            skillsByType={isGithubSkills ? skillsByType : undefined}
+          />
         )}
       </div>
     </div>

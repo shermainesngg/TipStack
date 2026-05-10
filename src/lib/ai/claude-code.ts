@@ -28,25 +28,31 @@ export async function pMap<T, R>(
 interface ClaudeCodeOptions {
   systemPrompt: string;
   userMessage: string;
-  jsonSchema: Record<string, unknown>;
+  jsonSchema?: Record<string, unknown>;
+  rawText?: boolean;
   maxTokens?: number;
 }
 
 export async function callClaudeCode<T>(options: ClaudeCodeOptions): Promise<T> {
-  const { systemPrompt, userMessage, jsonSchema } = options;
+  const { systemPrompt, userMessage, jsonSchema, rawText } = options;
 
-  const schemaInstruction = `\n\nIMPORTANT: You MUST respond with ONLY valid JSON matching this schema. No markdown, no explanation, no code fences — just the raw JSON object.\n\nSchema:\n${JSON.stringify(jsonSchema, null, 2)}`;
+  let fullPrompt = userMessage;
+  let systemSuffix = "";
 
-  const fullPrompt = userMessage + schemaInstruction;
+  if (!rawText && jsonSchema) {
+    fullPrompt += `\n\nIMPORTANT: You MUST respond with ONLY valid JSON matching this schema. No markdown, no explanation, no code fences — just the raw JSON object.\n\nSchema:\n${JSON.stringify(jsonSchema, null, 2)}`;
+    systemSuffix = "\n\nAlways respond with ONLY valid JSON. Never wrap in markdown code fences.";
+  }
+
   const args = [
     "-p", "-",
     "--output-format", "json",
-    "--system-prompt", systemPrompt + "\n\nAlways respond with ONLY valid JSON. Never wrap in markdown code fences.",
+    "--system-prompt", systemPrompt + systemSuffix,
     "--model", "sonnet",
     "--no-session-persistence",
   ];
 
-  const maxAttempts = 3;
+  const maxAttempts = rawText ? 1 : 3;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const stdout = await new Promise<string>((resolve, reject) => {
       const proc = spawn("claude", args, { stdio: ["pipe", "pipe", "pipe"] });
@@ -69,14 +75,19 @@ export async function callClaudeCode<T>(options: ClaudeCodeOptions): Promise<T> 
       throw new Error(`Claude Code error: ${response.result}`);
     }
 
-    let resultText: string = response.result;
-    resultText = resultText.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
+    const resultText: string = response.result;
+
+    if (rawText) {
+      return resultText as T;
+    }
+
+    const cleaned = resultText.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
 
     try {
-      const parsed = JSON.parse(resultText);
+      const parsed = JSON.parse(cleaned);
       return parsed as T;
     } catch (parseErr) {
-      console.warn(`JSON parse failed (attempt ${attempt}/${maxAttempts}), retrying... Response starts with: ${resultText.slice(0, 100)}`);
+      console.warn(`JSON parse failed (attempt ${attempt}/${maxAttempts}), retrying... Response starts with: ${cleaned.slice(0, 100)}`);
       if (attempt === maxAttempts) throw parseErr;
     }
   }

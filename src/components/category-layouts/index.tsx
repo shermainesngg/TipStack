@@ -24,3 +24,12 @@ export function getCategoryLayout(
 ): LayoutComponent {
   return LAYOUT_MAP[category] ?? DynamicSubTopicLayout;
 }
+
+export function CategoryLayoutRenderer({
+  category,
+  content,
+  skillsByType,
+}: LayoutProps & { category: ContentCategory }) {
+  const Layout = LAYOUT_MAP[category] ?? DynamicSubTopicLayout;
+  return <Layout content={content} skillsByType={skillsByType} />;
+}

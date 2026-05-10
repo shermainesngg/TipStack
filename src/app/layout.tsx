@@ -62,10 +62,10 @@ export default function RootLayout({
                 What&apos;s New
               </Link>
               <Link
-                href="/timeline"
+                href="/changelog"
                 className="px-3 py-1.5 rounded-full text-[14px] font-medium text-[#5A5A6E] hover:text-[#1A1A2E] hover:bg-[#dde4db] dark:text-[#A8B0A6] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A] transition-colors duration-150"
               >
-                Timeline
+                Changelog
               </Link>
             </nav>
             <div className="ml-auto">

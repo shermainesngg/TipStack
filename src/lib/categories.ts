@@ -91,6 +91,14 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
   },
 };
 
+export function toUrlSlug(slug: string): string {
+  return slug.replace(/_/g, "-");
+}
+
+export function fromUrlSlug(urlSlug: string): string {
+  return urlSlug.replace(/-/g, "_");
+}
+
 export function getCategoryConfig(slug: string): CategoryConfig | undefined {
   return CATEGORIES[slug as ContentCategory];
 }

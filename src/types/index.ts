@@ -40,6 +40,8 @@ export interface Content {
   last_rewritten_at?: string;
   sub_topic?: string;
   skill_id?: string;
+  practical_use_case?: string | null;
+  try_this?: string | null;
 }
 
 export type ContentSummary = Omit<Content, "body">;
@@ -119,6 +121,8 @@ export interface SynthesizedPiece {
   tags_category: ContentCategory;
   source_items: string[];
   source_urls: SourceUrl[];
+  practical_use_case?: string;
+  try_this?: string;
 }
 
 export interface SynthesisResult {
@@ -135,11 +139,28 @@ export interface FeedPost {
   topic_content_id: string;
   source_platforms: Platform[];
   pipeline_run_id: string | null;
+  priority: number;
   published_at: string;
   created_at: string;
   topic_slug?: string;
   topic_category?: ContentCategory;
   topic_sub_topic?: string;
+}
+
+// ─── Changelog Types ──────────────────────────────────────────────────────
+
+export type ChangelogUrgency = "breaking" | "important" | "informational";
+
+export interface ChangelogEntry {
+  id: string;
+  title: string;
+  summary: string;
+  urgency: ChangelogUrgency;
+  source_url: string;
+  affected_tools: string[];
+  version: string | null;
+  published_at: string;
+  created_at: string;
 }
 
 // ─── Source Config Types ────────────────────────────────────────────────────

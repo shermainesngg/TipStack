@@ -70,6 +70,16 @@ function buildResynthesizeSchema(allowedSubTopics: string[]) {
         },
         description: "Attribution for each source that contributed to this article",
       },
+      practical_use_case: {
+        type: "string",
+        description:
+          'Concrete scenario where this technique applies, starting with "When you..." or "If you...". 2-4 sentences.',
+      },
+      try_this: {
+        type: "string",
+        description:
+          'Specific action the reader can try right now, starting with an imperative verb. Include exact commands or steps. Completable in under 5 minutes.',
+      },
     },
     required: [
       "title",
@@ -99,6 +109,7 @@ You receive an existing published article and new source material that covers th
 7. **Merge tags.** Return the union of existing and new tags where appropriate.
 8. **Sub-topic.** Pick a sub-topic from the allowed list provided. Do NOT invent new sub-topics.
 9. **Sources section.** Include a "Sources" section at the end listing: source type, creator name, and link.
+10. **Actionable sections.** Generate a practical_use_case (concrete scenario starting with "When you..." or "If you...", 2-4 sentences) and try_this (specific action starting with an imperative verb, completable in under 5 minutes with exact commands/steps).
 
 Respond with valid JSON matching the schema provided.`;
 
@@ -136,6 +147,16 @@ function buildNewArticleSchema(allSubTopics: string[]) {
         type: "string",
         enum: allSubTopics,
         description: "Sub-topic for grouping within the category page. MUST be one of the allowed values for the chosen category.",
+      },
+      practical_use_case: {
+        type: "string",
+        description:
+          'Concrete scenario where this technique applies, starting with "When you..." or "If you...". 2-4 sentences. Omit for content_type "update".',
+      },
+      try_this: {
+        type: "string",
+        description:
+          'Specific action the reader can try right now, starting with an imperative verb. Include exact commands or steps. Completable in under 5 minutes. Omit for content_type "update".',
       },
     },
     required: [
@@ -330,6 +351,8 @@ You MUST pick one of these: ${allowedSubTopics.join(", ")}`;
     community_notes?: string[];
     sub_topic: string;
     sources_attribution?: { platform: string; creator: string; url: string; contribution_summary: string }[];
+    practical_use_case?: string;
+    try_this?: string;
   }>({
     systemPrompt: RESYNTHESIZE_SYSTEM_PROMPT,
     userMessage,
@@ -355,6 +378,8 @@ You MUST pick one of these: ${allowedSubTopics.join(", ")}`;
     tagsWorkflow: result.tags_workflow,
     tagsDomain: result.tags_domain,
     subTopic: result.sub_topic,
+    practicalUseCase: result.practical_use_case,
+    tryThis: result.try_this,
   });
 }
 
@@ -394,6 +419,8 @@ Tags: tool=[${e.tags_tool.join(", ")}] focus=[${e.tags_focus.join(", ")}] workfl
     tags_domain: string[];
     tags_category: string;
     sub_topic: string;
+    practical_use_case?: string;
+    try_this?: string;
   }>({
     systemPrompt: `You are a content synthesizer for TipStack. Create a single publishable article from the provided source material. Write for AI tool practitioners — specific techniques, real commands, actionable guidance. Use markdown with ## headings, bullets, bold. 300-800 words.
 
@@ -429,6 +456,8 @@ Respond with valid JSON matching the schema provided.`,
     tagsCategory: piece.tags_category ?? "claude_code_features",
     sourceUrls,
     subTopic: piece.sub_topic,
+    practicalUseCase: piece.practical_use_case,
+    tryThis: piece.try_this,
   });
 
   return contentId;

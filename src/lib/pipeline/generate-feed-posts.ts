@@ -22,8 +22,13 @@ const FEED_POST_SCHEMA = {
       description:
         "A short, succinct 1-2 sentence summary of the key takeaways. Plain prose, no bullet points.",
     },
+    priority: {
+      type: "number",
+      description:
+        "Urgency/importance score from 1-10. 9-10: breaking changes, major releases, security advisories. 7-8: significant new features, important updates. 5-6: useful but not urgent. 3-4: minor updates, nice-to-know. 1-2: trivial or redundant.",
+    },
   },
-  required: ["headline", "summary"],
+  required: ["headline", "summary", "priority"],
 };
 
 const FEED_POST_SYSTEM_PROMPT = `You are writing feed posts for TipStack, a platform that curates AI workflow tips.
@@ -37,6 +42,7 @@ A feed post is a short alert that tells practitioners what just changed. It link
 3. **For updates to existing articles:** Emphasize what's NEW, not the full article scope.
 4. **For new articles:** Summarize the key insights.
 5. **No hype.** No "game-changing" or "revolutionary". Just state what's useful.
+6. **Priority:** Rate urgency 1-10. Reserve 9-10 for breaking changes/security issues. Most tips are 5-6.
 
 Respond with valid JSON matching the schema provided.`;
 
@@ -55,7 +61,7 @@ export async function generateFeedPosts(
       ? "This is a brand new article created from the sources below."
       : "This is an update to an existing article with the new sources below.";
 
-    const result = await callClaudeCode<{ headline: string; summary: string }>({
+    const result = await callClaudeCode<{ headline: string; summary: string; priority: number }>({
       systemPrompt: FEED_POST_SYSTEM_PROMPT,
       userMessage: `Generate a feed post for this article update.
 
@@ -71,6 +77,7 @@ Platforms involved: ${update.sourcePlatforms.join(", ")}`,
     await insertFeedPost({
       headline: result.headline,
       summary: result.summary,
+      priority: Math.max(1, Math.min(10, Math.round(result.priority))),
       sourceUrls: update.sourceUrls,
       topicContentId: update.contentId,
       sourcePlatforms: update.sourcePlatforms,

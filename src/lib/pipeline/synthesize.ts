@@ -97,6 +97,16 @@ const SYNTHESIS_SCHEMA = {
             description:
               "Original source URLs with platform and creator for attribution",
           },
+          practical_use_case: {
+            type: "string",
+            description:
+              'Concrete scenario where this technique applies, starting with "When you..." or "If you...". 2-4 sentences. Omit for content_type "update".',
+          },
+          try_this: {
+            type: "string",
+            description:
+              'Specific action the reader can try right now, starting with an imperative verb. Include exact commands or steps. Completable in under 5 minutes. Omit for content_type "update".',
+          },
         },
         required: [
           "title",
@@ -182,6 +192,32 @@ You receive a batch of quality-filtered content extractions from YouTube videos 
 - If a tip involves code, include a code snippet
 - Keep body length between 300-800 words — enough depth to be useful, short enough to respect the reader's time
 
+## Visual Content — Use Diagrams Over Text
+
+Prefer diagrams and visual representations over lengthy prose wherever possible. Use Mermaid code blocks (\`\`\`mermaid) for:
+
+- **Flowcharts**: Decision trees, setup workflows, "should I use X?" decisions
+- **Sequence diagrams**: API call flows, agent-to-tool interactions, auth flows
+- **Architecture diagrams**: System boundaries, data flow, component relationships
+- **Comparison tables**: Use markdown tables for feature comparisons, tool trade-offs
+
+Rules:
+- Every deep_dive and roundup SHOULD include at least one Mermaid diagram
+- Place the diagram EARLY in the article (after the intro, before detailed steps)
+- Keep diagrams focused — max 8-10 nodes. Split into multiple diagrams if complex.
+- Use flowchart TD (top-down) or LR (left-right) for processes
+- Use sequenceDiagram for interactions between systems/actors
+- Label edges clearly — the diagram should be understandable without reading surrounding text
+
+## Actionable Sections
+
+For ALL content types EXCEPT "update", you MUST generate two additional fields:
+
+- **practical_use_case**: A concrete scenario where this technique applies. Start with "When you..." or "If you...". 2-4 sentences describing a real situation a developer would encounter.
+- **try_this**: A specific action the reader can try right now. Start with an imperative verb (e.g., "Open...", "Run...", "Add..."). Include exact commands or steps. Must be completable in under 5 minutes.
+
+Do NOT include these fields for content_type "update" — updates are informational and don't need exercises.
+
 ## Slug Format
 
 Generate URL-safe slugs: lowercase, hyphens between words, no special characters. Example: "claude-code-context-management-tips"
@@ -239,6 +275,8 @@ ${itemDescriptions}`,
       tagsDomain: piece.tags_domain ?? [],
       tagsCategory: piece.tags_category ?? "claude_code_features",
       sourceUrls: piece.source_urls,
+      practicalUseCase: piece.practical_use_case,
+      tryThis: piece.try_this,
     });
 
     for (const rawContentId of piece.source_items) {

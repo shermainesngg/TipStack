@@ -5,6 +5,7 @@ import { getContentBySlug } from "@/lib/supabase/queries";
 import { TagPill } from "@/components/tag-pill";
 import { MarkdownBody } from "@/components/markdown-body";
 import { SourceAttribution } from "@/components/source-attribution";
+import { ActionableSections } from "@/components/actionable-sections";
 import type { Content, ContentType } from "@/types";
 
 async function getContent(slug: string) {
@@ -128,6 +129,8 @@ function QuickTipLayout({ content }: { content: Content }) {
         <MarkdownBody content={content.body} />
       </div>
 
+      <ActionableSections content={content} />
+
       <SourceAttribution sources={content.source_urls} />
     </div>
   );
@@ -202,6 +205,8 @@ function RoundupLayout({ content }: { content: Content }) {
         <MarkdownBody content={content.body} />
       </div>
 
+      <ActionableSections content={content} />
+
       <SourceAttribution sources={content.source_urls} />
     </div>
   );
@@ -235,6 +240,8 @@ function DeepDiveLayout({ content }: { content: Content }) {
       <div className="mt-12">
         <MarkdownBody content={content.body} />
       </div>
+
+      <ActionableSections content={content} />
 
       <SourceAttribution sources={content.source_urls} />
     </div>

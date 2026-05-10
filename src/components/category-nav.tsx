@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cacheTag, cacheLife } from "next/cache";
-import { getAllCategoryConfigs } from "@/lib/categories";
+import { getAllCategoryConfigs, toUrlSlug } from "@/lib/categories";
 import {
   getCategoryToolsAndFreshness,
   type CategoryMeta,
@@ -40,7 +40,7 @@ function CategoryPill({ config }: { config: CategoryConfig }) {
   return (
     <Link
       key={config.slug}
-      href={`/categories/${config.slug}`}
+      href={`/categories/${toUrlSlug(config.slug)}`}
       className="inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-[13px] font-medium whitespace-nowrap
         text-[#6E6E7E] hover:text-[#1A1A2E] hover:bg-[#dde4db]
         dark:text-[#8C9688] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A]

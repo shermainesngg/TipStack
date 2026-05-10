@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { MermaidDiagram } from "./mermaid-diagram";
 
 export function MarkdownBody({ content }: { content: string }) {
   return (
@@ -54,6 +55,11 @@ export function MarkdownBody({ content }: { content: string }) {
         ),
         code: ({ className, children }) => {
           const isBlock = className?.includes("language-");
+          if (className?.includes("language-mermaid")) {
+            return (
+              <MermaidDiagram chart={String(children).replace(/\n$/, "")} />
+            );
+          }
           if (isBlock) {
             return (
               <code className="block rounded-xl bg-[#1A1A2E] p-5 font-mono text-sm leading-relaxed text-[#E8EDE6] overflow-x-auto">
@@ -67,9 +73,15 @@ export function MarkdownBody({ content }: { content: string }) {
             </code>
           );
         },
-        pre: ({ children }) => (
-          <pre className="mb-6 overflow-hidden rounded-xl">{children}</pre>
-        ),
+        pre: ({ children }) => {
+          const child = children as React.ReactElement<{ className?: string }>;
+          if (child?.props?.className?.includes("language-mermaid")) {
+            return <>{children}</>;
+          }
+          return (
+            <pre className="mb-6 overflow-hidden rounded-xl">{children}</pre>
+          );
+        },
       }}
     >
       {content}

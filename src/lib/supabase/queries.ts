@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "./server";
 import { createBrowserClient } from "./browser";
-import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost, Skill, SkillType, FetchedSkillMeta } from "@/types";
+import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogUrgency } from "@/types";
 import { normalizeToolTag, expandToolAliases } from "@/lib/tools";
 
 const CARD_COLUMNS = "id, title, slug, summary, content_type, status, tags_tool, tags_focus, tags_workflow, tags_domain, tags_category, source_urls, created_at, published_at";
@@ -118,6 +118,8 @@ export async function insertContent(params: {
   sourceUrls: SourceUrl[];
   subTopic?: string;
   skillId?: string;
+  practicalUseCase?: string;
+  tryThis?: string;
 }): Promise<string> {
   const insertData: Record<string, unknown> = {
     title: params.title,
@@ -140,6 +142,14 @@ export async function insertContent(params: {
 
   if (params.skillId) {
     insertData.skill_id = params.skillId;
+  }
+
+  if (params.practicalUseCase) {
+    insertData.practical_use_case = params.practicalUseCase;
+  }
+
+  if (params.tryThis) {
+    insertData.try_this = params.tryThis;
   }
 
   const { data, error } = await getServiceClient()
@@ -521,6 +531,19 @@ export async function getCategoryToolsAndFreshness(): Promise<
   return result;
 }
 
+export async function getCategoryFreshness(category: string): Promise<string | null> {
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("published_at")
+    .eq("status", "published")
+    .eq("tags_category", category)
+    .order("published_at", { ascending: false })
+    .limit(1);
+
+  if (error) throw new Error(`Failed to fetch category freshness: ${error.message}`);
+  return data[0]?.published_at ?? null;
+}
+
 // ─── feed stats ─────────────────────────────────────────────────────────────
 
 export interface FeedStats {
@@ -559,7 +582,7 @@ export async function getFeedStats(): Promise<FeedStats> {
 
 // ─── feed_posts ─────────────────────────────────────────────────────────────
 
-const FEED_COLUMNS = "id, headline, summary, source_urls, topic_content_id, source_platforms, published_at";
+const FEED_COLUMNS = "id, headline, summary, source_urls, topic_content_id, source_platforms, priority, published_at";
 
 /** Fetch feed posts with cursor-based pagination (newest first, 30-day window) */
 export async function getFeedPosts(
@@ -648,6 +671,8 @@ export async function updateContentArticle(
     tagsWorkflow: string[];
     tagsDomain: string[];
     subTopic?: string;
+    practicalUseCase?: string;
+    tryThis?: string;
   }
 ): Promise<void> {
   const updateData: Record<string, unknown> = {
@@ -664,6 +689,14 @@ export async function updateContentArticle(
 
   if (params.subTopic) {
     updateData.sub_topic = params.subTopic;
+  }
+
+  if (params.practicalUseCase) {
+    updateData.practical_use_case = params.practicalUseCase;
+  }
+
+  if (params.tryThis) {
+    updateData.try_this = params.tryThis;
   }
 
   const { error } = await getServiceClient()
@@ -827,10 +860,99 @@ export async function getContentForSkill(skillId: string): Promise<Content[]> {
   return data as Content[];
 }
 
+// ─── changelog_entries ─────────────────────────────────────────────────────
+
+/** Check if a changelog URL has already been processed */
+export async function isChangelogUrlProcessed(sourceUrl: string): Promise<boolean> {
+  const { data } = await getServiceClient()
+    .from("changelog_entries")
+    .select("id")
+    .eq("source_url", sourceUrl)
+    .single();
+
+  return !!data;
+}
+
+/** Insert a new changelog entry */
+export async function insertChangelogEntry(params: {
+  title: string;
+  summary: string;
+  urgency: ChangelogUrgency;
+  sourceUrl: string;
+  affectedTools: string[];
+  version: string | null;
+  publishedAt: string;
+}): Promise<string> {
+  const { data, error } = await getServiceClient()
+    .from("changelog_entries")
+    .insert({
+      title: params.title,
+      summary: params.summary,
+      urgency: params.urgency,
+      source_url: params.sourceUrl,
+      affected_tools: params.affectedTools,
+      version: params.version,
+      published_at: params.publishedAt,
+    })
+    .select("id")
+    .single();
+
+  if (error) throw new Error(`Failed to insert changelog entry: ${error.message}`);
+  return data.id;
+}
+
+/** Fetch all changelog entries (read client, newest first) */
+export async function getChangelogEntries(): Promise<ChangelogEntry[]> {
+  const { data, error } = await getReadClient()
+    .from("changelog_entries")
+    .select("*")
+    .order("published_at", { ascending: false });
+
+  if (error) {
+    if (error.message.includes("schema cache")) return [];
+    throw new Error(`Failed to fetch changelog entries: ${error.message}`);
+  }
+  return data as ChangelogEntry[];
+}
+
+/** Fetch recent breaking changelog entries (for digest) */
+export async function getRecentBreakingChanges(days = 7): Promise<ChangelogEntry[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await getReadClient()
+    .from("changelog_entries")
+    .select("*")
+    .eq("urgency", "breaking")
+    .gte("published_at", since)
+    .order("published_at", { ascending: false });
+
+  if (error) throw new Error(`Failed to fetch breaking changes: ${error.message}`);
+  return data as ChangelogEntry[];
+}
+
+/** Fetch recent published content (for digest) */
+export async function getRecentPublishedContent(days = 7, limit = 10): Promise<Content[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("*")
+    .eq("status", "published")
+    .gte("published_at", since)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+
+  if (error) throw new Error(`Failed to fetch recent content: ${error.message}`);
+  return data as Content[];
+}
+
+// ─── feed_posts ─────────────────────────────────────────────────────────────
+
 /** Insert a feed post */
 export async function insertFeedPost(params: {
   headline: string;
   summary: string;
+  priority?: number;
   sourceUrls: SourceUrl[];
   topicContentId: string;
   sourcePlatforms: string[];
@@ -841,6 +963,7 @@ export async function insertFeedPost(params: {
     .insert({
       headline: params.headline,
       summary: params.summary,
+      priority: params.priority ?? 5,
       source_urls: params.sourceUrls,
       topic_content_id: params.topicContentId,
       source_platforms: params.sourcePlatforms,

@@ -7,6 +7,7 @@ import {
 } from "@/lib/supabase/queries";
 import { formatFreshness } from "@/lib/utils";
 import { getDomainConfig } from "@/lib/domains";
+import { fromUrlSlug } from "@/lib/categories";
 import { AnimatedFeed } from "@/components/animated-feed";
 
 async function getDomainContent(domain: string) {
@@ -30,7 +31,8 @@ export default async function DomainPage({
 }: {
   params: Promise<{ domain: string }>;
 }) {
-  const { domain } = await params;
+  const { domain: rawDomain } = await params;
+  const domain = fromUrlSlug(rawDomain);
 
   let content: Awaited<ReturnType<typeof getDomainContent>> = [];
   let domainExists = false;

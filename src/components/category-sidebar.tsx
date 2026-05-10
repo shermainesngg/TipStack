@@ -15,9 +15,8 @@ import {
   ChevronRight,
   X,
   Zap,
-  Clock,
 } from "lucide-react";
-import type { CategoryConfig } from "@/lib/categories";
+import { toUrlSlug, type CategoryConfig } from "@/lib/categories";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Terminal,
@@ -42,7 +41,7 @@ function CategoryItem({
 
   return (
     <Link
-      href={`/categories/${config.slug}`}
+      href={`/categories/${toUrlSlug(config.slug)}`}
       onClick={onClick}
       className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-all duration-150
         ${
@@ -82,7 +81,7 @@ export function CategorySidebar({
             <CategoryItem
               key={config.slug}
               config={config}
-              isActive={pathname === `/categories/${config.slug}`}
+              isActive={pathname === `/categories/${toUrlSlug(config.slug)}`}
             />
           ))}
         </div>
@@ -159,15 +158,6 @@ export function MobileTopicDrawer({
                   <Zap className="size-4 flex-shrink-0 opacity-60" />
                   What&apos;s New
                 </Link>
-                <Link
-                  href="/timeline"
-                  onClick={() => setOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-all duration-150
-                    ${pathname === "/timeline" ? "bg-[#dde4db] font-semibold text-[#1A1A2E] dark:bg-[#2A322A] dark:text-[#EDF2EC]" : "text-[#5A5A6E] hover:bg-[#dde4db]/50 hover:text-[#1A1A2E] dark:text-[#A8B0A6] dark:hover:bg-[#2A322A]/50 dark:hover:text-[#EDF2EC]"}`}
-                >
-                  <Clock className="size-4 flex-shrink-0 opacity-60" />
-                  Timeline
-                </Link>
               </div>
 
               <div className="mx-5 h-px bg-[#dde4db] dark:bg-[#3A433A]" />
@@ -183,7 +173,7 @@ export function MobileTopicDrawer({
                   <CategoryItem
                     key={config.slug}
                     config={config}
-                    isActive={pathname === `/categories/${config.slug}`}
+                    isActive={pathname === `/categories/${toUrlSlug(config.slug)}`}
                     onClick={() => setOpen(false)}
                   />
                 ))}

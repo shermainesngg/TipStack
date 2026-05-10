@@ -155,3 +155,11 @@ export const DOCS_RELEASES_FEED = "https://github.com/anthropics/claude-code/rel
 export const DOCS_WHATS_NEW_BASE = "https://code.claude.com/docs/en/whats-new";
 export const DOCS_MAX_RELEASES = 5;
 export const DOCS_MIN_BULLET_POINTS = 3;
+
+// ─── Changelog Radar ────────────────────────────────────────────────────────
+
+export const CHANGELOG_RELEASES_FEED = "https://github.com/anthropics/claude-code/releases.atom";
+export const CHANGELOG_WHATS_NEW_BASE = "https://code.claude.com/docs/en/whats-new";
+export const CHANGELOG_MAX_RELEASES = 20;
+export const CHANGELOG_WHATS_NEW_WEEKS = 4;
+export const CHANGELOG_AFFECTED_TOOLS = ["claude_code", "claude_api", "claude_desktop", "anthropic_sdk"] as const;

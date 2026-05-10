@@ -2,6 +2,7 @@ import Link from "next/link";
 import { cacheTag, cacheLife } from "next/cache";
 import { getAvailableTags } from "@/lib/supabase/queries";
 import { getDomainConfig } from "@/lib/domains";
+import { toUrlSlug } from "@/lib/categories";
 
 async function getDomains() {
   "use cache";
@@ -32,7 +33,7 @@ export async function DomainNav() {
         return (
           <Link
             key={slug}
-            href={`/domains/${slug}`}
+            href={`/domains/${toUrlSlug(slug)}`}
             className="rounded-full px-3 py-1 text-[13px] font-medium whitespace-nowrap
               text-[#6E6E7E] hover:text-[#1A1A2E] hover:bg-[#dde4db]
               dark:text-[#8C9688] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A]
