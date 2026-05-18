@@ -1,36 +1,102 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TipStack
+
+AI workflow tip aggregation platform. Fetches content from YouTube, Reddit, Twitter/X, news, and documentation sources, runs it through a Claude-powered extraction/dedup/synthesis pipeline, and publishes curated tips as living articles.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph Sources
+        YT[YouTube]
+        RD[Reddit]
+        TW[Twitter/X]
+        DOC[Docs]
+        CL[Changelog]
+    end
+
+    subgraph Pipeline["Content Pipeline (Inngest)"]
+        direction LR
+        F[Fetch] --> E[Extract]
+        E --> D[Dedup]
+        D --> M[Match]
+        M --> S[Synthesize]
+        S --> FP[Feed Posts]
+        FP --> N[Notify]
+    end
+
+    subgraph AI["AI Layer"]
+        CC[Claude Code CLI]
+    end
+
+    subgraph Storage["Supabase (Postgres + RLS)"]
+        SL[(sources_log)]
+        RC[(raw_content)]
+        CT[(content)]
+        FPT[(feed_posts)]
+    end
+
+    subgraph Frontend["Next.js on Vercel"]
+        HP[Home Feed]
+        CAT[Category Pages]
+        ART[Living Articles]
+    end
+
+    Sources --> F
+    E & S & FP -.->|JSON schema| CC
+    F --> SL
+    E --> RC
+    S --> CT
+    FP --> FPT
+    N -.->|email| RS[Resend]
+    Storage -->|anon key reads| Frontend
+```
+
+## Tech Stack
+
+- **Framework:** Next.js 16 (App Router, React 19)
+- **Styling:** Tailwind CSS v4, shadcn/ui, Framer Motion
+- **Database:** Supabase (Postgres + RLS)
+- **AI Pipeline:** Claude Code CLI with JSON schema enforcement
+- **Orchestration:** Inngest (multi-step functions)
+- **Email:** Resend (admin notifications)
+- **Hosting:** Vercel
+
+## Categories
+
+Claude Code Features | Security & Guardrails | GitHub Skills | Prompting & Rules | Workflow Patterns | MCP & Integrations | Debugging & Testing
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+cp .env.example .env.local   # fill in API keys
+npm install
+npm run dev                   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Content Pipeline
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+Fetch -> Extract -> Dedup -> Match -> Synthesize -> Feed Posts -> Notify
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Run manually:
 
-## Learn More
+```bash
+./scripts/run-pipeline.sh            # full pipeline
+npx tsx scripts/fetch-all.ts         # fetch only
+npx tsx scripts/process-fetched.ts   # extract only
+npx tsx scripts/push-content.ts      # dedup + synthesize
+npx tsx scripts/seed-feed-posts.ts   # generate feed posts
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Database Migrations
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+supabase db push    # apply pending migrations
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Migrations live in `supabase/migrations/` (numbered sequentially).
 
-## Deploy on Vercel
+## Environment Variables
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See `.env.example` for the full list. Key groups: Supabase, Anthropic, YouTube, Reddit, Inngest, Resend, and revalidation secret.
