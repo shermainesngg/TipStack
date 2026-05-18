@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Workflow } from "lucide-react";
 import { TagPill } from "@/components/tag-pill";
+import { getArticleUrl } from "@/lib/categories";
 import type { Content } from "@/types";
 
 const containerVariants = {
@@ -42,7 +43,7 @@ function FeaturedWorkflow({ content }: { content: Content }) {
   const creator = content.source_urls?.[0]?.creator;
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl bg-[#f7fafd] p-8 lg:p-10
           shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_rgba(0,0,0,0.05)]
@@ -120,7 +121,7 @@ function WorkflowCard({ content }: { content: Content }) {
   const creator = content.source_urls?.[0]?.creator;
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl bg-[#eef5fa] dark:bg-[#1a2530] p-5 h-full flex flex-col
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]

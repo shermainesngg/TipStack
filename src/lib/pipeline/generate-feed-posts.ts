@@ -1,5 +1,6 @@
 import { callClaudeCode, pMap } from "@/lib/ai/claude-code";
 import { insertFeedPost } from "@/lib/supabase/queries";
+import { createServiceClient } from "@/lib/supabase/server";
 import type { SourceUrl } from "@/types";
 
 interface ArticleUpdate {
@@ -9,13 +10,23 @@ interface ArticleUpdate {
   sourceUrls: SourceUrl[];
 }
 
+async function getContentById(contentId: string) {
+  const supabase = createServiceClient();
+  const { data } = await supabase
+    .from("content")
+    .select("title, summary")
+    .eq("id", contentId)
+    .single();
+  return data;
+}
+
 const FEED_POST_SCHEMA = {
   type: "object",
   properties: {
     headline: {
       type: "string",
       description:
-        "One-line summary of what's new. Concise, informative, no clickbait. Example: 'New Claude Code harness patterns from 2 YouTube tutorials'",
+        "One-line summary of the actual update or capability. Focus on what changed or what's useful, not where it came from. Example: 'Claude Code supports agentic workflows in projects'",
     },
     summary: {
       type: "string",
@@ -37,12 +48,13 @@ A feed post is a short alert that tells practitioners what just changed. It link
 
 ## Rules
 
-1. **Headline:** One sentence, 60-100 characters. State what's new, not what the article is about. Good: "3 new cursor workflow shortcuts from Reddit". Bad: "Cursor Tips Collection".
+1. **Headline:** One sentence, 60-100 characters. State the actual update, feature, or technique — not the source or article. Never mention platforms, creators, or counts. Good: "Claude Code supports agentic workflows in projects". Bad: "Two YouTube creators share agentic workflow tips".
 2. **Summary:** 1-2 sentences of plain prose. Concise and actionable. No bullet points.
 3. **For updates to existing articles:** Emphasize what's NEW, not the full article scope.
 4. **For new articles:** Summarize the key insights.
 5. **No hype.** No "game-changing" or "revolutionary". Just state what's useful.
 6. **Priority:** Rate urgency 1-10. Reserve 9-10 for breaking changes/security issues. Most tips are 5-6.
+7. **Do NOT fetch, visit, or access any URLs.** All the context you need is provided in the prompt.
 
 Respond with valid JSON matching the schema provided.`;
 
@@ -53,8 +65,12 @@ export async function generateFeedPosts(
   if (articleUpdates.length === 0) return 0;
 
   await pMap(articleUpdates, async (update) => {
+    const article = await getContentById(update.contentId);
+    const articleTitle = article?.title ?? "Untitled";
+    const articleSummary = article?.summary ?? "";
+
     const sourceDesc = update.sourceUrls
-      .map((s) => `- ${s.creator} (${s.platform}): ${s.url}`)
+      .map((s) => `- ${s.creator} (${s.platform})`)
       .join("\n");
 
     const context = update.isNew
@@ -66,6 +82,9 @@ export async function generateFeedPosts(
       userMessage: `Generate a feed post for this article update.
 
 ${context}
+
+**Article Title:** ${articleTitle}
+**Article Summary:** ${articleSummary}
 
 ## Sources
 ${sourceDesc}

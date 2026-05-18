@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -16,7 +16,11 @@ import {
   X,
   Zap,
 } from "lucide-react";
-import { toUrlSlug, type CategoryConfig } from "@/lib/categories";
+import {
+  toUrlSlug,
+  getCategoryFilters,
+  type CategoryConfig,
+} from "@/lib/categories";
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Terminal,
@@ -32,34 +36,93 @@ function CategoryItem({
   config,
   isActive,
   onClick,
+  showSubmenu,
 }: {
   config: CategoryConfig;
   isActive: boolean;
   onClick?: () => void;
+  showSubmenu?: boolean;
 }) {
   const Icon = ICON_MAP[config.icon];
+  const [hovered, setHovered] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+  const categoryPath = `/categories/${toUrlSlug(config.slug)}`;
+  const filters = showSubmenu ? getCategoryFilters(config.slug) : [];
+
+  const handleEnter = () => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    setHovered(true);
+  };
+  const handleLeave = () => {
+    timeoutRef.current = setTimeout(() => setHovered(false), 150);
+  };
 
   return (
-    <Link
-      href={`/categories/${toUrlSlug(config.slug)}`}
-      onClick={onClick}
-      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-all duration-150
-        ${
-          isActive
-            ? "bg-[#dde4db] font-semibold text-[#1A1A2E] dark:bg-[#2A322A] dark:text-[#EDF2EC]"
-            : "text-[#5A5A6E] hover:bg-[#dde4db]/50 hover:text-[#1A1A2E] dark:text-[#A8B0A6] dark:hover:bg-[#2A322A]/50 dark:hover:text-[#EDF2EC]"
-        }`}
+    <div
+      className="relative"
+      onMouseEnter={handleEnter}
+      onMouseLeave={handleLeave}
     >
-      {Icon && (
-        <Icon
-          className={`size-4 flex-shrink-0 ${isActive ? "opacity-100" : "opacity-60"}`}
-        />
-      )}
-      <span className="flex-1">{config.label}</span>
-      <ChevronRight
-        className={`size-3.5 opacity-0 transition-opacity ${isActive ? "opacity-40" : "group-hover:opacity-30"}`}
-      />
-    </Link>
+      <Link
+        href={categoryPath}
+        onClick={onClick}
+        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] transition-all duration-150
+          ${
+            isActive
+              ? "bg-[#dde4db] font-semibold text-[#1A1A2E] dark:bg-[#2A322A] dark:text-[#EDF2EC]"
+              : "text-[#5A5A6E] hover:bg-[#dde4db]/50 hover:text-[#1A1A2E] dark:text-[#A8B0A6] dark:hover:bg-[#2A322A]/50 dark:hover:text-[#EDF2EC]"
+          }`}
+      >
+        {Icon && (
+          <Icon
+            className={`size-4 flex-shrink-0 ${isActive ? "opacity-100" : "opacity-60"}`}
+          />
+        )}
+        <span className="flex-1">{config.label}</span>
+        {filters.length > 0 && (
+          <ChevronRight
+            className={`size-3.5 transition-opacity ${hovered || isActive ? "opacity-40" : "opacity-0"}`}
+          />
+        )}
+      </Link>
+
+      <AnimatePresence>
+        {filters.length > 0 && hovered && (
+          <motion.div
+            initial={{ opacity: 0, x: -4 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -4 }}
+            transition={{ duration: 0.15 }}
+            className="absolute left-full top-0 z-50 ml-2 w-[180px] rounded-xl
+              bg-[#fafcfa] dark:bg-[#1E241E]
+              shadow-[0_2px_12px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.04)]
+              dark:shadow-[0_2px_12px_rgba(0,0,0,0.3),0_0_0_1px_rgba(255,255,255,0.06)]
+              py-1.5"
+          >
+            <Link
+              href={categoryPath}
+              className="block px-3.5 py-2 text-[13px] font-semibold text-[#1A1A2E] dark:text-[#EDF2EC]
+                hover:bg-[#dde4db]/50 dark:hover:bg-[#2A322A]/50 transition-colors"
+            >
+              All {config.label}
+            </Link>
+            <div className="mx-3 my-1 h-px bg-[#dde4db] dark:bg-[#3A433A]" />
+            {filters.map((f) => (
+              <Link
+                key={f.key}
+                href={`${categoryPath}?activity=${f.key}`}
+                className="block px-3.5 py-1.5 text-[13px] text-[#5A5A6E] dark:text-[#A8B0A6]
+                  hover:bg-[#dde4db]/50 hover:text-[#1A1A2E]
+                  dark:hover:bg-[#2A322A]/50 dark:hover:text-[#EDF2EC]
+                  transition-colors"
+              >
+                {f.label}
+              </Link>
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -81,7 +144,8 @@ export function CategorySidebar({
             <CategoryItem
               key={config.slug}
               config={config}
-              isActive={pathname === `/categories/${toUrlSlug(config.slug)}`}
+              isActive={pathname.startsWith(`/categories/${toUrlSlug(config.slug)}`)}
+              showSubmenu
             />
           ))}
         </div>
@@ -173,7 +237,8 @@ export function MobileTopicDrawer({
                   <CategoryItem
                     key={config.slug}
                     config={config}
-                    isActive={pathname === `/categories/${toUrlSlug(config.slug)}`}
+                    isActive={pathname.startsWith(`/categories/${toUrlSlug(config.slug)}`)}
+
                     onClick={() => setOpen(false)}
                   />
                 ))}

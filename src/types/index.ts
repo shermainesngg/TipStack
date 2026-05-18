@@ -145,6 +145,7 @@ export interface FeedPost {
   topic_slug?: string;
   topic_category?: ContentCategory;
   topic_sub_topic?: string;
+  topic_tags_focus?: string[];
 }
 
 // ─── Changelog Types ──────────────────────────────────────────────────────
@@ -155,6 +156,8 @@ export interface ChangelogEntry {
   id: string;
   title: string;
   summary: string;
+  headline: string | null;
+  changes: string[];
   urgency: ChangelogUrgency;
   source_url: string;
   affected_tools: string[];

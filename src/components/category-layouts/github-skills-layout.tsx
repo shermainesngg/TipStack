@@ -7,6 +7,7 @@ import { Sparkles } from "lucide-react";
 import { TagPill } from "@/components/tag-pill";
 import { SkillCard } from "@/components/skill-card";
 import { getSkillTypeConfig, getAllSkillTypeConfigs } from "@/lib/skill-types";
+import { getArticleUrl } from "@/lib/categories";
 import type { Content, Skill } from "@/types";
 
 const containerVariants = {
@@ -37,7 +38,7 @@ function ContentCard({ content }: { content: Content }) {
     .map((t) => ({ label: t, category: "tool" as const }));
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl bg-[#f3eff8] dark:bg-[#221e2e] p-5 h-full flex flex-col
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]

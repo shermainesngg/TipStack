@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Blocks } from "lucide-react";
 import { TagPill } from "@/components/tag-pill";
+import { getArticleUrl } from "@/lib/categories";
 import type { Content } from "@/types";
 
 const containerVariants = {
@@ -41,7 +42,7 @@ function FeaturedIntegration({ content }: { content: Content }) {
     .map((t) => ({ label: t, category: "tool" as const }));
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl bg-[#f8fcf9] p-8 lg:p-10
           shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_rgba(0,0,0,0.05)]
@@ -105,7 +106,7 @@ function IntegrationCard({ content }: { content: Content }) {
     .map((t) => ({ label: t, category: "tool" as const }));
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl bg-[#f0f8f2] dark:bg-[#1a2b1e] p-5 h-full flex flex-col
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]

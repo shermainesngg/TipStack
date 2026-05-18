@@ -8,6 +8,7 @@ import {
 import Link from "next/link";
 import { getAllCategoryConfigs } from "@/lib/categories";
 import { CategorySidebar, MobileTopicDrawer } from "@/components/category-sidebar";
+import { HeaderNav } from "@/components/header-nav";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -54,20 +55,7 @@ export default function RootLayout({
             >
               TipStack
             </Link>
-            <nav className="ml-8 hidden sm:flex items-center gap-1" aria-label="Main">
-              <Link
-                href="/"
-                className="px-3 py-1.5 rounded-full text-[14px] font-medium text-[#5A5A6E] hover:text-[#1A1A2E] hover:bg-[#dde4db] dark:text-[#A8B0A6] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A] transition-colors duration-150"
-              >
-                What&apos;s New
-              </Link>
-              <Link
-                href="/changelog"
-                className="px-3 py-1.5 rounded-full text-[14px] font-medium text-[#5A5A6E] hover:text-[#1A1A2E] hover:bg-[#dde4db] dark:text-[#A8B0A6] dark:hover:text-[#EDF2EC] dark:hover:bg-[#2A322A] transition-colors duration-150"
-              >
-                Changelog
-              </Link>
-            </nav>
+            <HeaderNav />
             <div className="ml-auto">
               <Suspense>
                 <MobileTopicDrawer categories={categories} />
@@ -77,9 +65,11 @@ export default function RootLayout({
         </header>
         <div className="mx-auto flex w-full max-w-[1200px] gap-10 px-5">
           <Suspense>
-            <CategorySidebar categories={categories} />
+            <div className="relative z-30">
+              <CategorySidebar categories={categories} />
+            </div>
           </Suspense>
-          <main className="flex-1 min-w-0">{children}</main>
+          <main className="relative z-0 flex-1 min-w-0">{children}</main>
         </div>
       </body>
     </html>

@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { ContentSummary } from "@/types";
+import { getArticleUrl } from "@/lib/categories";
 import { TagPill } from "./tag-pill";
+
+const TOKEN_CONTEXT_TAGS = new Set(["cost_optimization", "context_management"]);
 
 const WORKFLOW_TINTS: Record<string, string> = {
   coding: "bg-[#f0f8f2] dark:bg-[#1a2b1e]",
@@ -74,7 +77,7 @@ function FeaturedCard({ content }: { content: ContentSummary }) {
   const platform = content.source_urls?.[0]?.platform;
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <article
         className="relative rounded-2xl bg-[#fafcf9] p-8 lg:p-10
           shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_rgba(0,0,0,0.05)]
@@ -137,7 +140,7 @@ function QuickTipCard({ content }: { content: ContentSummary }) {
   const topTag = collectTags(content)[0];
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <article
         className="relative rounded-xl px-5 py-4 bg-[#fafcfa] dark:bg-[#1E241E]
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)]
@@ -171,7 +174,7 @@ function UpdateCard({ content }: { content: ContentSummary }) {
   const visibleTags = allTags.slice(0, 2);
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <article
         className="relative rounded-2xl px-5 py-4 bg-[#f9f5ec] dark:bg-[#2a261a]
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)]
@@ -214,7 +217,7 @@ function RoundupCard({ content }: { content: ContentSummary }) {
   const creator = content.source_urls?.[0]?.creator;
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <article
         className={`relative rounded-2xl p-6 ${tintClass}
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]
@@ -269,15 +272,21 @@ function DeepDiveCard({ content }: { content: ContentSummary }) {
   const allTags = collectTags(content);
   const visibleTags = allTags.slice(0, 3);
   const creator = content.source_urls?.[0]?.creator;
+  const isTokenContext = content.tags_focus.some((t) => TOKEN_CONTEXT_TAGS.has(t));
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <article
         className={`relative rounded-2xl p-5 ${tintClass}
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]
           transition-shadow duration-300 ease-out`}
       >
         <div className="flex flex-wrap gap-1.5 mb-3">
+          {isTokenContext && (
+            <span className="inline-flex items-center text-[10.5px] font-medium px-2 py-0.5 rounded-md tracking-wide text-[#3D6080] bg-[#d8e4f0] dark:text-[#97C5E5] dark:bg-[#1F2E3D]">
+              Token &amp; Context
+            </span>
+          )}
           {visibleTags.map((tag) => (
             <TagPill
               key={`${tag.category}-${tag.label}`}

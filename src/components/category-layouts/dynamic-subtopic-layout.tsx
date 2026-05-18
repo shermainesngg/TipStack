@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { TagPill } from "@/components/tag-pill";
-import { getCategoryConfig } from "@/lib/categories";
+import { getCategoryConfig, getArticleUrl } from "@/lib/categories";
 import type { Content, ContentType } from "@/types";
 
 const containerVariants = {
@@ -51,7 +51,7 @@ function FeaturedArticleCard({ content, tint, darkTint }: { content: Content; ti
   const fresh = isNew(content.published_at);
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group md:col-span-2">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group md:col-span-2">
       <motion.article
         className="rounded-2xl bg-[#fafcfa] dark:bg-[#1E241E] p-6 lg:p-8
           shadow-[0_1px_3px_rgba(0,0,0,0.04)]
@@ -102,7 +102,7 @@ function ArticleCard({ content, tint, darkTint }: { content: Content; tint: stri
   const fresh = isNew(content.published_at);
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className={`rounded-2xl ${tint} ${darkTint} p-5
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]

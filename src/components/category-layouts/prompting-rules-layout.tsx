@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { MessageSquareCode } from "lucide-react";
 import { TagPill } from "@/components/tag-pill";
+import { getArticleUrl } from "@/lib/categories";
 import type { Content } from "@/types";
 
 const containerVariants = {
@@ -41,7 +42,7 @@ function FeaturedPrompt({ content }: { content: Content }) {
     .map((t) => ({ label: t, category: "tool" as const }));
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl bg-[#fdfaf3] p-8 lg:p-10
           shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_rgba(0,0,0,0.05)]
@@ -104,7 +105,7 @@ function PromptCard({ content }: { content: Content }) {
   const topTag = content.tags_tool[0];
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl bg-[#f9f5ec] dark:bg-[#2a261a] p-5 h-full flex flex-col
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]

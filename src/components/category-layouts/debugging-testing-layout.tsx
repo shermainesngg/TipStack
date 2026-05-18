@@ -4,6 +4,7 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { Bug, CheckCircle2 } from "lucide-react";
 import { TagPill } from "@/components/tag-pill";
+import { getArticleUrl } from "@/lib/categories";
 import type { Content } from "@/types";
 
 const containerVariants = {
@@ -62,7 +63,7 @@ function FeaturedDiagnostic({ content }: { content: Content }) {
     .map((t) => ({ label: t, category: "tool" as const }));
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl overflow-hidden
           shadow-[0_1px_2px_rgba(0,0,0,0.04),0_6px_20px_rgba(0,0,0,0.05)]
@@ -137,7 +138,7 @@ function DiagnosticCard({ content }: { content: Content }) {
   const isQuickTip = content.content_type === "quick_tip";
 
   return (
-    <Link href={`/content/${content.slug}`} className="block group">
+    <Link href={getArticleUrl(content.tags_category, content.slug)} className="block group">
       <motion.article
         className="rounded-2xl overflow-hidden h-full flex flex-col
           group-hover:shadow-[0_2px_8px_rgba(0,0,0,0.04),0_12px_32px_rgba(0,0,0,0.08)]

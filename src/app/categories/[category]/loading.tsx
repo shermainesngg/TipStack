@@ -1,13 +1,16 @@
 function Shimmer({ className }: { className?: string }) {
   return (
     <div
-      className={`animate-[shimmer_1.8s_ease-in-out_infinite] bg-[#dde4db] dark:bg-[#2A322A] rounded-xl ${className ?? ""}`}
-      style={{
-        backgroundImage:
-          "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
-        backgroundSize: "200% 100%",
-      }}
-    />
+      className={`relative overflow-hidden bg-[#dde4db] dark:bg-[#2A322A] rounded-xl ${className ?? ""}`}
+    >
+      <div
+        className="absolute inset-0 -translate-x-full animate-[shimmer_1.8s_ease-in-out_infinite]"
+        style={{
+          backgroundImage:
+            "linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%)",
+        }}
+      />
+    </div>
   );
 }
 

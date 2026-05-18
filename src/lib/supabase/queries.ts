@@ -594,7 +594,7 @@ export async function getFeedPosts(
 
   let query = getReadClient()
     .from("feed_posts")
-    .select(`${FEED_COLUMNS}, content!inner(slug, tags_category, sub_topic)`)
+    .select(`${FEED_COLUMNS}, content!inner(slug, tags_category, sub_topic, tags_focus)`)
     .gte("published_at", thirtyDaysAgo)
     .order("published_at", { ascending: false })
     .limit(limit);
@@ -611,12 +611,13 @@ export async function getFeedPosts(
   if (error) throw new Error(`Failed to fetch feed posts: ${error.message}`);
 
   return (data as Record<string, unknown>[]).map((row) => {
-    const content = row.content as { slug: string; tags_category: string; sub_topic: string | null } | null;
+    const content = row.content as { slug: string; tags_category: string; sub_topic: string | null; tags_focus: string[] } | null;
     return {
       ...(row as unknown as FeedPost),
       topic_slug: content?.slug,
       topic_category: content?.tags_category as FeedPost["topic_category"],
       topic_sub_topic: content?.sub_topic ?? undefined,
+      topic_tags_focus: content?.tags_focus ?? [],
     };
   });
 }
@@ -877,6 +878,8 @@ export async function isChangelogUrlProcessed(sourceUrl: string): Promise<boolea
 export async function insertChangelogEntry(params: {
   title: string;
   summary: string;
+  headline?: string;
+  changes?: string[];
   urgency: ChangelogUrgency;
   sourceUrl: string;
   affectedTools: string[];
@@ -888,6 +891,8 @@ export async function insertChangelogEntry(params: {
     .insert({
       title: params.title,
       summary: params.summary,
+      headline: params.headline ?? null,
+      changes: params.changes ?? [],
       urgency: params.urgency,
       source_url: params.sourceUrl,
       affected_tools: params.affectedTools,

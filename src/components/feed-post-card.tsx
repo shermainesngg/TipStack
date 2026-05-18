@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { FeedPost, Platform, ContentCategory } from "@/types";
+import { getArticleUrl } from "@/lib/categories";
 
 const PLATFORM_LABELS: Record<Platform, string> = {
   youtube: "YouTube",
@@ -28,6 +29,8 @@ const CATEGORY_LABELS: Record<ContentCategory, string> = {
   mcp_and_integrations: "MCP",
   debugging_and_testing: "Debugging & Testing",
 };
+
+const TOKEN_CONTEXT_TAGS = new Set(["cost_optimization", "context_management"]);
 
 const CATEGORY_TAG_COLORS: Record<ContentCategory, string> = {
   claude_code_features: "text-[#9B6B2F] bg-[#faf5ee] dark:text-[#D4B875] dark:bg-[#2a2318]",
@@ -62,7 +65,10 @@ function formatFeedTime(dateStr: string): string {
 }
 
 export function FeedPostCard({ post }: { post: FeedPost }) {
-  const articleHref = post.topic_slug ? `/content/${post.topic_slug}` : "#";
+  const articleHref = post.topic_slug && post.topic_category
+    ? getArticleUrl(post.topic_category, post.topic_slug)
+    : "#";
+  const isTokenContext = (post.topic_tags_focus ?? []).some((t) => TOKEN_CONTEXT_TAGS.has(t));
 
   return (
     <Link href={articleHref} className="block group">
@@ -121,6 +127,11 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
             {post.topic_sub_topic && (
               <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide text-[#7B6230] bg-[#f0e8d4] dark:text-[#D4B875] dark:bg-[#2E2818]">
                 {post.topic_sub_topic}
+              </span>
+            )}
+            {isTokenContext && (
+              <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide text-[#3D6080] bg-[#d8e4f0] dark:text-[#97C5E5] dark:bg-[#1F2E3D]">
+                Token &amp; Context
               </span>
             )}
           </div>

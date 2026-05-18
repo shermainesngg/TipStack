@@ -1,6 +1,6 @@
 #!/bin/bash
-# Daily pipeline: fetch → process → publish + feed posts
-# Scheduled via crontab at 1pm SGT daily
+# Daily pipeline: fetch → process → dedup/synthesize → feed posts
+# Scheduled via crontab at 10pm SGT daily
 
 set -euo pipefail
 
@@ -15,14 +15,17 @@ mkdir -p "$DIR/scripts/data"
 {
   echo "=== Pipeline started at $(date) ==="
 
-  echo "[1/3] Fetching new content..."
+  echo "[1/4] Fetching new content..."
   npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/fetch-all.ts
 
-  echo "[2/3] Processing fetched items..."
+  echo "[2/4] Processing fetched items..."
   npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/process-fetched.ts
 
-  echo "[3/3] Publishing & generating feed posts..."
-  npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/generate-missing-feed-posts.ts
+  echo "[3/4] Dedup + synthesis..."
+  npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/push-content.ts
+
+  echo "[4/4] Generating feed posts..."
+  npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/seed-feed-posts.ts
 
   echo "=== Pipeline finished at $(date) ==="
 } >> "$LOG" 2>&1

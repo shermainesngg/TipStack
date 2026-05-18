@@ -70,12 +70,23 @@ export function ChangelogTimelineEntry({ entry }: { entry: ChangelogEntry }) {
         </div>
 
         <h3 className="font-heading font-semibold text-[16px] text-[#1A1A2E] dark:text-[#EDF2EC] leading-snug">
-          {entry.title}
+          {entry.headline || entry.title}
         </h3>
 
-        <p className="text-[14.5px] text-[#5A5A6E] dark:text-[#A8B0A6] leading-relaxed max-w-[55ch]">
-          {entry.summary}
-        </p>
+        {entry.changes && entry.changes.length > 0 ? (
+          <ul className="space-y-1 text-[14px] text-[#5A5A6E] dark:text-[#A8B0A6] leading-relaxed max-w-[55ch]">
+            {entry.changes.map((change, i) => (
+              <li key={i} className="flex gap-2">
+                <span className="text-[#9B9B8E] dark:text-[#6E6E7E] select-none mt-[1px]">•</span>
+                <span>{change}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[14.5px] text-[#5A5A6E] dark:text-[#A8B0A6] leading-relaxed max-w-[55ch]">
+            {entry.summary}
+          </p>
+        )}
 
         <div className="flex flex-wrap items-center gap-2 pt-1">
           {entry.affected_tools.map((tool) => (

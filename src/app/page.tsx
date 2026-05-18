@@ -3,6 +3,7 @@ import { getFeedPosts, getFeedStats } from "@/lib/supabase/queries";
 import type { FeedStats } from "@/lib/supabase/queries";
 import type { FeedPost } from "@/types";
 import { FeedScroll } from "@/components/feed-scroll";
+import { FeedTabs } from "@/components/feed-tabs";
 
 async function getInitialFeed() {
   "use cache";
@@ -89,7 +90,14 @@ export default async function FeedPage() {
         )}
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10 lg:h-[calc(100vh-10rem)]">
+      <FeedTabs
+        news={news}
+        community={community}
+        newsCursor={news.length >= 20 ? news[news.length - 1].published_at : null}
+        communityCursor={community.length >= 20 ? community[community.length - 1].published_at : null}
+      />
+
+      <div className="hidden lg:grid lg:grid-cols-2 gap-10 lg:h-[calc(100vh-10rem)]">
         <section className="flex flex-col min-h-0">
           <div className="flex items-center gap-3 mb-5 shrink-0">
             <h2 className="font-heading font-bold text-[15px] tracking-wide text-[#1A1A2E] dark:text-[#EDF2EC]">

@@ -95,6 +95,10 @@ export function toUrlSlug(slug: string): string {
   return slug.replace(/_/g, "-");
 }
 
+export function getArticleUrl(category: ContentCategory | string, slug: string): string {
+  return `/categories/${toUrlSlug(category)}/${slug}`;
+}
+
 export function fromUrlSlug(urlSlug: string): string {
   return urlSlug.replace(/-/g, "_");
 }

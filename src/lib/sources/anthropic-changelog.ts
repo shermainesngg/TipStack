@@ -17,7 +17,8 @@ interface RawChangelogItem {
 
 interface ClassifiedEntry {
   urgency: ChangelogUrgency;
-  summary: string;
+  headline: string;
+  changes: string[];
   affected_tools: string[];
   version: string | null;
 }
@@ -30,9 +31,14 @@ const CLASSIFICATION_SCHEMA = {
       enum: ["breaking", "important", "informational"],
       description: "breaking = requires user action or may break existing workflows. important = significant new capability worth adopting. informational = minor fix or improvement.",
     },
-    summary: {
+    headline: {
       type: "string",
-      description: "2-3 sentence summary of what changed and why it matters to a developer using Claude tools.",
+      description: "One short sentence (under 80 chars) summarizing the theme of this release. E.g. 'New plugin system and history search'.",
+    },
+    changes: {
+      type: "array",
+      items: { type: "string" },
+      description: "2-5 bullet points, each a concise description of one change (under 100 chars each). Start each with a verb.",
     },
     affected_tools: {
       type: "array",
@@ -44,7 +50,7 @@ const CLASSIFICATION_SCHEMA = {
       description: "Version string if applicable (e.g., 'v2.1.0'), or null if not a versioned release.",
     },
   },
-  required: ["urgency", "summary", "affected_tools", "version"],
+  required: ["urgency", "headline", "changes", "affected_tools", "version"],
 };
 
 function stripHtmlTags(html: string): string {
@@ -113,6 +119,8 @@ async function fetchWhatsNewPages(): Promise<RawChangelogItem[]> {
     const weekStr = String(week).padStart(2, "0");
     const pageUrl = `${CHANGELOG_WHATS_NEW_BASE}/${year}-w${weekStr}`;
 
+    if (await isChangelogUrlProcessed(pageUrl)) break;
+
     try {
       const res = await fetch(pageUrl);
       if (!res.ok) continue;
@@ -168,9 +176,9 @@ export async function fetchAndClassifyChangelog(): Promise<ChangelogFetchResult>
   for (const item of allItems) {
     if (await isChangelogUrlProcessed(item.url)) {
       stats.skipped++;
-    } else {
-      newItems.push(item);
+      break;
     }
+    newItems.push(item);
   }
 
   if (newItems.length === 0) return stats;
@@ -183,7 +191,9 @@ export async function fetchAndClassifyChangelog(): Promise<ChangelogFetchResult>
 
       await insertChangelogEntry({
         title: item.title,
-        summary: classified.summary,
+        summary: classified.headline,
+        headline: classified.headline,
+        changes: classified.changes,
         urgency: classified.urgency,
         sourceUrl: item.url,
         affectedTools: classified.affected_tools,

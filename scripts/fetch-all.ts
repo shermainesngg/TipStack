@@ -13,7 +13,7 @@ const SKILL_META_PATH = path.resolve(__dirname, "data", "skill-meta.json");
 
 async function main() {
   // Docs fetch runs first — its keywords feed YouTube search discovery
-  const docsItems = await fetchDocsItems();
+  const docsItems = await fetchDocsItems(isUrlProcessed);
   const docKeywords = extractFeatureKeywords(docsItems);
 
   // Reddit runs second — its titles also feed YouTube search

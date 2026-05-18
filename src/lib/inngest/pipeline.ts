@@ -3,12 +3,13 @@ import { fetchYouTubeItems } from "@/lib/sources/youtube";
 import { fetchRedditItems } from "@/lib/sources/reddit";
 import { fetchTwitterItems } from "@/lib/sources/twitter";
 import { fetchDocsItems, extractFeatureKeywords } from "@/lib/sources/docs";
+import { fetchAndClassifyChangelog } from "@/lib/sources/anthropic-changelog";
 import { ingestBatch } from "@/lib/pipeline/ingest";
 import { codeDedup } from "@/lib/pipeline/dedup";
 import { matchAndUpdateArticles } from "@/lib/pipeline/match-articles";
 import { generateFeedPosts } from "@/lib/pipeline/generate-feed-posts";
 import { notifyPipelineComplete } from "@/lib/pipeline/notify";
-import { getPublishedContent, flagArticleForReview } from "@/lib/supabase/queries";
+import { getPublishedContent, flagArticleForReview, isUrlProcessed } from "@/lib/supabase/queries";
 import type { FetchedItem } from "@/types";
 
 /**
@@ -39,7 +40,7 @@ export const pipelineFunction = inngest.createFunction(
     // ── Step 1: Fetch new items from all sources ──────────────────────────
 
     const docsItems = await step.run("fetch-docs", async () => {
-      return fetchDocsItems();
+      return fetchDocsItems(isUrlProcessed);
     });
 
     const _docKeywords = await step.run("extract-doc-keywords", async () => {
@@ -56,6 +57,10 @@ export const pipelineFunction = inngest.createFunction(
 
     const twitterItems = await step.run("fetch-twitter", async () => {
       return fetchTwitterItems();
+    });
+
+    const changelogResult = await step.run("fetch-changelog", async () => {
+      return fetchAndClassifyChangelog();
     });
 
     const allItems: FetchedItem[] = [...docsItems, ...youtubeItems, ...redditItems, ...twitterItems];
@@ -173,6 +178,7 @@ export const pipelineFunction = inngest.createFunction(
       feedPostsCreated,
       staleArticlesFlagged: staleArticles.length,
       docKeywordsExtracted: _docKeywords.length,
+      changelogInserted: changelogResult.inserted,
     };
   }
 );

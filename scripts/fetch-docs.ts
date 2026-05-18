@@ -5,12 +5,13 @@ import dotenv from "dotenv";
 dotenv.config({ path: path.resolve(__dirname, "..", ".env.local") });
 
 import { fetchDocsItems, extractFeatureKeywords } from "@/lib/sources/docs";
+import { isUrlProcessed } from "./lib/shared";
 
 const OUTPUT_PATH = path.resolve(__dirname, "data", "fetched-docs.json");
 
 async function main() {
   console.log("Fetching documentation sources...");
-  const items = await fetchDocsItems();
+  const items = await fetchDocsItems(isUrlProcessed);
 
   fs.mkdirSync(path.dirname(OUTPUT_PATH), { recursive: true });
   fs.writeFileSync(OUTPUT_PATH, JSON.stringify(items, null, 2));

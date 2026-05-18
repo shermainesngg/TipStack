@@ -4,7 +4,6 @@ import {
   DOCS_MAX_RELEASES,
   DOCS_MIN_BULLET_POINTS,
 } from "./config";
-import { isUrlProcessed } from "@/lib/supabase/queries";
 import type { FetchedItem } from "@/types";
 
 interface ReleaseEntry {
@@ -34,7 +33,7 @@ function stripHtmlTags(html: string): string {
     .trim();
 }
 
-async function fetchGitHubReleases(): Promise<FetchedItem[]> {
+async function fetchGitHubReleases(isUrlProcessed: (url: string) => Promise<boolean>): Promise<FetchedItem[]> {
   const res = await fetch(DOCS_RELEASES_FEED);
   if (!res.ok) {
     throw new Error(`Failed to fetch GitHub releases feed: ${res.status}`);
@@ -82,7 +81,7 @@ async function fetchGitHubReleases(): Promise<FetchedItem[]> {
   return items;
 }
 
-async function fetchWhatsNew(): Promise<FetchedItem[]> {
+async function fetchWhatsNew(isUrlProcessed: (url: string) => Promise<boolean>): Promise<FetchedItem[]> {
   const now = new Date();
   const currentWeek = getISOWeekNumber(now);
   const previousWeek = currentWeek - 1;
@@ -121,10 +120,10 @@ async function fetchWhatsNew(): Promise<FetchedItem[]> {
   return items;
 }
 
-export async function fetchDocsItems(): Promise<FetchedItem[]> {
+export async function fetchDocsItems(isUrlProcessed: (url: string) => Promise<boolean>): Promise<FetchedItem[]> {
   const [releases, whatsNew] = await Promise.all([
-    fetchGitHubReleases(),
-    fetchWhatsNew(),
+    fetchGitHubReleases(isUrlProcessed),
+    fetchWhatsNew(isUrlProcessed),
   ]);
   return [...releases, ...whatsNew];
 }

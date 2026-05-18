@@ -38,7 +38,7 @@ const SYNTHESIS_SCHEMA = {
             type: "string",
             enum: ["quick_tip", "deep_dive", "roundup", "update"],
             description:
-              "Content format: quick_tip = one focused technique (1-2 paragraphs), deep_dive = thorough walkthrough (300-800 words), roundup = collection of related tips (numbered list), update = tool news or model release info",
+              "Content format — choose carefully, do NOT default to deep_dive: quick_tip = ONE focused technique or tool, under 400 words, no more than 3 headings. deep_dive = in-depth walkthrough of a SINGLE complex topic with multiple steps, 500-800 words. roundup = collection of 3+ related tips/rules/tools presented as a numbered or categorized list (if the title says 'N things/rules/tips' it is ALWAYS a roundup). update = breaking news, version release, or security advisory about a specific event.",
           },
           tags_tool: {
             type: "array",
@@ -131,13 +131,24 @@ const SYNTHESIS_SCHEMA = {
 const FEW_SHOT_EXAMPLES = `
 ## Example Published Pieces
 
-### Example 1
+### Example 1 (roundup — note the Mermaid diagram after the intro)
 **Title:** 5 Claude Code Shortcuts That Cut Context Window Waste in Half
 **Summary:** Claude Code's context window fills up fast during long sessions. These five techniques — from /compact to strategic file scoping — help you stay productive without starting over.
 **Body (excerpt):**
 ## The Problem: Context Window Bloat
 
 Every file you open, every error message, every back-and-forth exchange eats into Claude Code's context window. Once it's full, responses degrade or you're forced to start a new session — losing all the context you've built up.
+
+\`\`\`mermaid
+flowchart LR
+  A[New Session] --> B[Files & Errors\\nFill Context]
+  B --> C{Context Full?}
+  C -- No --> D[Keep Working]
+  C -- Yes --> E[/compact]
+  E --> F[Summary Replaces\\nRaw History]
+  F --> D
+  D --> B
+\`\`\`
 
 ## 1. Use /compact Regularly
 
@@ -151,7 +162,7 @@ The \`/compact\` command summarizes your conversation history, freeing up contex
 ## 2. Scope File References Precisely
 ...
 
-### Example 2
+### Example 2 (deep_dive — note the sequence diagram showing system interactions)
 **Title:** How to Build a Reddit-to-Notion Pipeline with n8n and Claude
 **Summary:** A step-by-step workflow that monitors specific subreddits, filters high-quality posts using Claude, and saves structured summaries directly to a Notion database — all running on autopilot.
 **Body (excerpt):**
@@ -162,9 +173,45 @@ An automated pipeline that:
 2. Sends each post to Claude for structured extraction (summary, key tips, tool tags)
 3. Writes the result to a Notion database with proper tagging
 
+\`\`\`mermaid
+sequenceDiagram
+  participant R as Reddit API
+  participant N as n8n Workflow
+  participant C as Claude
+  participant DB as Notion DB
+  R->>N: New post (score > 50)
+  N->>C: Extract summary + tags
+  C-->>N: Structured JSON
+  N->>DB: Write to database
+  Note over DB: Tagged & searchable
+\`\`\`
+
 Total setup time: ~30 minutes. Runs for free on n8n cloud's starter tier.
 
 ## Step 1: Set Up the Reddit Trigger Node
+...
+
+### Example 3 (quick_tip — even short pieces benefit from a focused diagram)
+**Title:** Use Claude Code's --allowedTools Flag to Lock Down Agent Permissions
+**Summary:** One CLI flag prevents Claude Code from running dangerous commands during automated runs. Here's how to scope it for CI pipelines.
+**Body (excerpt):**
+## The Flag
+
+Pass \`--allowedTools\` when launching Claude Code to restrict which tools the agent can use:
+
+\`\`\`bash
+claude -p "review this PR" --allowedTools Read,Grep,Glob
+\`\`\`
+
+\`\`\`mermaid
+flowchart TD
+  A[Claude Code Agent] --> B{Tool Request}
+  B --> C[Read] --> E[✅ Allowed]
+  B --> D[Bash] --> F[❌ Blocked]
+  B --> G[Write] --> H[❌ Blocked]
+\`\`\`
+
+This gives the agent read-only access — it can explore the codebase but cannot modify files or run shell commands.
 ...
 `;
 
@@ -184,6 +231,16 @@ You receive a batch of quality-filtered content extractions from YouTube videos 
 
 5. **Source attribution**: Every piece must reference which source items it draws from (by ID) and include the original URLs for credit.
 
+## Content Type Selection — DO NOT default to deep_dive
+
+Aim for a MIX of content types. Use this decision tree:
+- Title mentions a NUMBER of things ("9 rules", "5 tips", "3 patterns") → **roundup**
+- Covers a single tool, library, or technique with a short explanation → **quick_tip**
+- Breaking news, version release, security incident report → **update**
+- In-depth walkthrough of one complex topic requiring multiple steps → **deep_dive**
+
+In a batch of 5+ items, at MOST 40% should be deep_dive. Prefer quick_tip for focused single-tool pieces.
+
 ## Content Quality Standards
 
 - Every piece must contain at least one concrete, actionable technique
@@ -202,12 +259,14 @@ Prefer diagrams and visual representations over lengthy prose wherever possible.
 - **Comparison tables**: Use markdown tables for feature comparisons, tool trade-offs
 
 Rules:
-- Every deep_dive and roundup SHOULD include at least one Mermaid diagram
-- Place the diagram EARLY in the article (after the intro, before detailed steps)
+- Every deep_dive and roundup MUST include at least one Mermaid diagram — no exceptions
+- quick_tip pieces SHOULD include a small diagram (3-5 nodes) when the concept involves a flow, decision, or system interaction
+- Place the first diagram EARLY in the article (after the intro, before detailed steps) — it orients the reader visually before they read the details
 - Keep diagrams focused — max 8-10 nodes. Split into multiple diagrams if complex.
 - Use flowchart TD (top-down) or LR (left-right) for processes
 - Use sequenceDiagram for interactions between systems/actors
 - Label edges clearly — the diagram should be understandable without reading surrounding text
+- Diagrams REPLACE prose, not duplicate it — if a diagram shows the flow, do not re-describe the same flow in a paragraph beneath it
 
 ## Actionable Sections
 
