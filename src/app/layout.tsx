@@ -55,7 +55,9 @@ export default function RootLayout({
             >
               TipStack
             </Link>
-            <HeaderNav />
+            <Suspense>
+              <HeaderNav />
+            </Suspense>
             <div className="ml-auto">
               <Suspense>
                 <MobileTopicDrawer categories={categories} />
