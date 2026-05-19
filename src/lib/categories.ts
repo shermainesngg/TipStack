@@ -65,7 +65,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#eef5fa]",
     darkTint: "dark:bg-[#1a2530]",
     accent: "text-[#3D6080]",
-    subTopics: ["CI/CD Integration", "Multi-Agent Setups", "Automation", "Routines"],
+    subTopics: ["CI/CD Integration", "Multi-Agent Setups", "Pipeline Automation", "Routines & Scheduling", "Knowledge Management"],
   },
   mcp_and_integrations: {
     slug: "mcp_and_integrations",
@@ -76,7 +76,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#f0f8f2]",
     darkTint: "dark:bg-[#1a2b1e]",
     accent: "text-[#2D6040]",
-    subTopics: ["MCP Servers", "Tool Integrations", "API Connections", "Community Servers"],
+    subTopics: ["MCP Servers", "Tool Integrations", "Community Servers", "Token & Cost Optimization", "Data Connectors"],
   },
   debugging_and_testing: {
     slug: "debugging_and_testing",
@@ -87,7 +87,7 @@ const CATEGORIES: Record<ContentCategory, CategoryConfig> = {
     tint: "bg-[#eff2fa]",
     darkTint: "dark:bg-[#1c2030]",
     accent: "text-[#4A5A8B]",
-    subTopics: ["Debugging Techniques", "Test Generation", "TDD Workflows", "Error Handling"],
+    subTopics: ["Debugging Techniques", "Test Generation", "Output Validation", "Error Diagnosis", "CI & Test Automation"],
   },
 };
 
@@ -128,12 +128,7 @@ export interface ActivityFilter {
 }
 
 const CATEGORY_FILTERS: Record<ContentCategory, ActivityFilter[]> = {
-  claude_code_features: [
-    { key: "releases", label: "New Releases", tags: ["model_updates", "releases"] },
-    { key: "design", label: "Claude Design", tags: ["design", "claude-design"] },
-    { key: "hooks", label: "Hooks & Config", tags: ["hooks", "configuration"] },
-    { key: "agents", label: "Sub-agents", tags: ["agents", "agentic", "sub-agents"] },
-  ],
+  claude_code_features: [],
   security_and_guardrails: [
     { key: "permissions", label: "Permissions & RLS", tags: ["permissions", "rls", "access-control"] },
     { key: "api-keys", label: "API Key Hygiene", tags: ["api-keys", "secrets", "credentials"] },
@@ -145,29 +140,10 @@ const CATEGORY_FILTERS: Record<ContentCategory, ActivityFilter[]> = {
     { key: "building", label: "Building Skills", tags: ["skill-creation", "skill-building"] },
     { key: "use-cases", label: "Use Cases", tags: ["use-cases", "examples"] },
   ],
-  prompting_and_rules: [
-    { key: "claude-md", label: "CLAUDE.md", tags: ["claude-md", "project-rules"] },
-    { key: "prompt-eng", label: "Prompt Engineering", tags: ["prompt_engineering", "prompt-engineering"] },
-    { key: "context", label: "Context Management", tags: ["context_management", "context-management"] },
-    { key: "system-prompts", label: "System Prompts", tags: ["system_prompts", "system-prompts"] },
-  ],
-  workflow_patterns: [
-    { key: "cicd", label: "CI/CD", tags: ["ci_cd", "cicd", "continuous-integration"] },
-    { key: "multi-agent", label: "Multi-Agent", tags: ["multi-agent", "agent-teams"] },
-    { key: "automation", label: "Automation", tags: ["automation", "pipeline"] },
-    { key: "routines", label: "Routines", tags: ["routines", "scheduled", "cron"] },
-  ],
-  mcp_and_integrations: [
-    { key: "servers", label: "MCP Servers", tags: ["mcp", "mcp-servers"] },
-    { key: "tools", label: "Tool Integrations", tags: ["tool-use", "integrations"] },
-    { key: "apis", label: "API Connections", tags: ["api_design", "api-design", "api-connections"] },
-  ],
-  debugging_and_testing: [
-    { key: "debugging", label: "Debugging", tags: ["debugging"] },
-    { key: "testing", label: "Test Generation", tags: ["testing", "test-generation"] },
-    { key: "tdd", label: "TDD Workflows", tags: ["tdd", "test-driven"] },
-    { key: "errors", label: "Error Handling", tags: ["error-handling", "error-resolution"] },
-  ],
+  prompting_and_rules: [],
+  workflow_patterns: [],
+  mcp_and_integrations: [],
+  debugging_and_testing: [],
 };
 
 export function getCategoryFilters(slug: string): ActivityFilter[] {

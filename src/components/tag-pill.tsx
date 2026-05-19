@@ -8,28 +8,28 @@ const TAG_STYLES: Record<
   { bg: string; text: string; darkBg: string; darkText: string }
 > = {
   tool: {
-    bg: "bg-[#f0dbd8]",
-    text: "text-[#8B4A4A]",
-    darkBg: "dark:bg-[#3D2424]",
-    darkText: "dark:text-[#E5A097]",
+    bg: "bg-[#F2C4B8]",
+    text: "text-[#6E2B2B]",
+    darkBg: "dark:bg-[#3D2020]",
+    darkText: "dark:text-[#E8A89E]",
   },
   focus: {
-    bg: "bg-[#e0d8ef]",
-    text: "text-[#5E3F96]",
-    darkBg: "dark:bg-[#2A1F3D]",
-    darkText: "dark:text-[#B89DD4]",
+    bg: "bg-[#D2E098]",
+    text: "text-[#3A5015]",
+    darkBg: "dark:bg-[#1E2D12]",
+    darkText: "dark:text-[#B5D070]",
   },
   workflow: {
-    bg: "bg-[#d2e8d6]",
-    text: "text-[#2D6040]",
-    darkBg: "dark:bg-[#1A3327]",
-    darkText: "dark:text-[#7EBE8E]",
+    bg: "bg-[#D8BFD2]",
+    text: "text-[#582848]",
+    darkBg: "dark:bg-[#2E1828]",
+    darkText: "dark:text-[#C898B8]",
   },
   domain: {
-    bg: "bg-[#f0e8d4]",
-    text: "text-[#7B6230]",
-    darkBg: "dark:bg-[#2E2818]",
-    darkText: "dark:text-[#D4B875]",
+    bg: "bg-[#ECCF90]",
+    text: "text-[#5E4515]",
+    darkBg: "dark:bg-[#2E2510]",
+    darkText: "dark:text-[#D4B060]",
   },
 };
 
@@ -51,7 +51,7 @@ export function TagPill({
   return (
     <span
       className={cn(
-        "inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md whitespace-nowrap tracking-wide",
+        "inline-flex items-center text-[12px] font-medium px-3 py-1 rounded-full whitespace-nowrap tracking-wide",
         styles.bg,
         styles.text,
         styles.darkBg,

@@ -97,8 +97,9 @@ function FeaturedCard({ content }: { content: ContentSummary }) {
         </div>
 
         <h2
-          className="font-heading leading-[1.1] tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2"
+          className="font-heading leading-[1.1] tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2 title-clamp"
           style={{ fontSize: "clamp(1.5rem, 2vw + 0.5rem, 2rem)" }}
+          title={content.title}
         >
           {content.title}
         </h2>
@@ -148,7 +149,7 @@ function QuickTipCard({ content }: { content: ContentSummary }) {
       >
         <div className="flex items-start gap-4">
           <div className="flex-1 min-w-0">
-            <h2 className="text-[15px] font-heading font-semibold leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-1">
+            <h2 className="text-[15px] font-heading font-semibold leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-1 title-clamp" title={content.title}>
               {content.title}
             </h2>
             <p className="mt-1 text-[13px] leading-[1.5] text-[#5A5A6E] dark:text-[#A8B0A6] line-clamp-1">
@@ -188,7 +189,7 @@ function UpdateCard({ content }: { content: ContentSummary }) {
             {formatDate(content.published_at)}
           </span>
         </div>
-        <h2 className="text-base font-heading font-semibold leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2">
+        <h2 className="text-base font-heading font-semibold leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2 title-clamp" title={content.title}>
           {content.title}
         </h2>
         <p className="mt-1.5 text-[14px] leading-[1.6] text-[#5A5A6E] dark:text-[#A8B0A6] line-clamp-2">
@@ -230,8 +231,9 @@ function RoundupCard({ content }: { content: ContentSummary }) {
         </div>
 
         <h2
-          className="font-heading font-bold leading-[1.1] tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2"
+          className="font-heading font-bold leading-[1.1] tracking-tight text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2 title-clamp"
           style={{ fontSize: "clamp(1.25rem, 1.5vw + 0.5rem, 1.5rem)" }}
+          title={content.title}
         >
           {content.title}
         </h2>
@@ -283,7 +285,7 @@ function DeepDiveCard({ content }: { content: ContentSummary }) {
       >
         <div className="flex flex-wrap gap-1.5 mb-3">
           {isTokenContext && (
-            <span className="inline-flex items-center text-[10.5px] font-medium px-2 py-0.5 rounded-md tracking-wide text-[#3D6080] bg-[#d8e4f0] dark:text-[#97C5E5] dark:bg-[#1F2E3D]">
+            <span className="inline-flex items-center text-[12px] font-medium px-3 py-1 rounded-full tracking-wide text-[#1A4A40] bg-[#B8D8D0] dark:text-[#80BEB4] dark:bg-[#152E28]">
               Token &amp; Context
             </span>
           )}
@@ -296,7 +298,7 @@ function DeepDiveCard({ content }: { content: ContentSummary }) {
           ))}
         </div>
 
-        <h2 className="text-lg font-heading font-semibold leading-snug text-[#1A1A2E] line-clamp-2 dark:text-[#EDF2EC]">
+        <h2 className="text-lg font-heading font-semibold leading-snug text-[#1A1A2E] line-clamp-2 title-clamp dark:text-[#EDF2EC]" title={content.title}>
           {content.title}
         </h2>
 

@@ -164,6 +164,12 @@
   background: #4A554A;
 }
 
+.group:hover .title-clamp {
+  -webkit-line-clamp: unset;
+  display: block;
+  overflow: visible;
+}
+
 @keyframes shimmer {
   0% {
     transform: translateX(-100%);

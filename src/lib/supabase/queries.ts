@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "./server";
 import { createBrowserClient } from "./browser";
-import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogUrgency } from "@/types";
+import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogChange, ChangeCategory } from "@/types";
 import { normalizeToolTag, expandToolAliases } from "@/lib/tools";
 
 const CARD_COLUMNS = "id, title, slug, summary, content_type, status, tags_tool, tags_focus, tags_workflow, tags_domain, tags_category, source_urls, created_at, published_at";
@@ -861,7 +861,16 @@ export async function getContentForSkill(skillId: string): Promise<Content[]> {
   return data as Content[];
 }
 
-// ─── changelog_entries ─────────────────────────────────────────────────────
+// ─── changelog_entries + changelog_changes ────────────────────────────────
+
+const CHANGELOG_WITH_CHANGES = "id, title, headline, source_url, version, published_at, created_at, changelog_changes(*)";
+
+function mapChangelogRows(rows: Record<string, unknown>[]): ChangelogEntry[] {
+  return rows.map((row) => ({
+    ...(row as unknown as Omit<ChangelogEntry, "changes">),
+    changes: (row.changelog_changes as ChangelogChange[]) ?? [],
+  }));
+}
 
 /** Check if a changelog URL has already been processed */
 export async function isChangelogUrlProcessed(sourceUrl: string): Promise<boolean> {
@@ -874,28 +883,23 @@ export async function isChangelogUrlProcessed(sourceUrl: string): Promise<boolea
   return !!data;
 }
 
-/** Insert a new changelog entry */
+/** Insert a changelog entry with its individual changes */
 export async function insertChangelogEntry(params: {
   title: string;
-  summary: string;
-  headline?: string;
-  changes?: string[];
-  urgency: ChangelogUrgency;
+  headline: string | null;
   sourceUrl: string;
-  affectedTools: string[];
   version: string | null;
   publishedAt: string;
+  changes: { description: string; category: ChangeCategory; affectedTools: string[] }[];
 }): Promise<string> {
-  const { data, error } = await getServiceClient()
+  const client = getServiceClient();
+
+  const { data, error } = await client
     .from("changelog_entries")
     .insert({
       title: params.title,
-      summary: params.summary,
-      headline: params.headline ?? null,
-      changes: params.changes ?? [],
-      urgency: params.urgency,
+      headline: params.headline,
       source_url: params.sourceUrl,
-      affected_tools: params.affectedTools,
       version: params.version,
       published_at: params.publishedAt,
     })
@@ -903,36 +907,76 @@ export async function insertChangelogEntry(params: {
     .single();
 
   if (error) throw new Error(`Failed to insert changelog entry: ${error.message}`);
+
+  if (params.changes.length > 0) {
+    const { error: changesError } = await client
+      .from("changelog_changes")
+      .insert(
+        params.changes.map((c) => ({
+          changelog_entry_id: data.id,
+          description: c.description,
+          category: c.category,
+          affected_tools: c.affectedTools,
+        }))
+      );
+
+    if (changesError) throw new Error(`Failed to insert changelog changes: ${changesError.message}`);
+  }
+
   return data.id;
 }
 
-/** Fetch all changelog entries (read client, newest first) */
+/** Fetch all changelog entries with changes (read client, newest first) */
 export async function getChangelogEntries(): Promise<ChangelogEntry[]> {
   const { data, error } = await getReadClient()
     .from("changelog_entries")
-    .select("*")
+    .select(CHANGELOG_WITH_CHANGES)
     .order("published_at", { ascending: false });
 
   if (error) {
     if (error.message.includes("schema cache")) return [];
     throw new Error(`Failed to fetch changelog entries: ${error.message}`);
   }
-  return data as ChangelogEntry[];
+  return mapChangelogRows(data as Record<string, unknown>[]);
 }
 
-/** Fetch recent breaking changelog entries (for digest) */
+/** Fetch recent entries that contain at least one breaking change */
 export async function getRecentBreakingChanges(days = 7): Promise<ChangelogEntry[]> {
   const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
   const { data, error } = await getReadClient()
+    .from("changelog_changes")
+    .select("changelog_entry_id")
+    .eq("category", "breaking_change")
+    .gte("created_at", since);
+
+  if (error) throw new Error(`Failed to fetch breaking changes: ${error.message}`);
+
+  const entryIds = [...new Set((data as { changelog_entry_id: string }[]).map((r) => r.changelog_entry_id))];
+  if (entryIds.length === 0) return [];
+
+  const { data: entries, error: entriesError } = await getReadClient()
     .from("changelog_entries")
-    .select("*")
-    .eq("urgency", "breaking")
+    .select(CHANGELOG_WITH_CHANGES)
+    .in("id", entryIds)
+    .order("published_at", { ascending: false });
+
+  if (entriesError) throw new Error(`Failed to fetch breaking entries: ${entriesError.message}`);
+  return mapChangelogRows(entries as Record<string, unknown>[]);
+}
+
+/** Fetch recent changelog entries (for daily digest) */
+export async function getRecentChangelogEntries(days = 1): Promise<ChangelogEntry[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+  const { data, error } = await getReadClient()
+    .from("changelog_entries")
+    .select(CHANGELOG_WITH_CHANGES)
     .gte("published_at", since)
     .order("published_at", { ascending: false });
 
-  if (error) throw new Error(`Failed to fetch breaking changes: ${error.message}`);
-  return data as ChangelogEntry[];
+  if (error) throw new Error(`Failed to fetch recent changelog entries: ${error.message}`);
+  return mapChangelogRows(data as Record<string, unknown>[]);
 }
 
 /** Fetch recent published content (for digest) */

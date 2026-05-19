@@ -1,49 +1,96 @@
 "use client";
 
 import { useState } from "react";
-import type { ChangelogEntry, ChangelogUrgency } from "@/types";
+import type { ChangelogEntry, ChangeCategory } from "@/types";
 import { ChangelogTimelineEntry } from "./changelog-entry-card";
+import { DailyDigestCard } from "./daily-digest-card";
 
-const FILTERS: { key: ChangelogUrgency | "all"; label: string }[] = [
+const FILTERS: { key: ChangeCategory | "all"; label: string }[] = [
   { key: "all", label: "All" },
-  { key: "breaking", label: "Breaking" },
-  { key: "important", label: "Important" },
-  { key: "informational", label: "Informational" },
+  { key: "breaking_change", label: "Breaking" },
+  { key: "new_feature", label: "New" },
+  { key: "improvement", label: "Improved" },
+  { key: "bug_fix", label: "Fixes" },
+  { key: "deprecation", label: "Deprecated" },
+  { key: "performance", label: "Perf" },
 ];
 
-function groupByMonth(entries: ChangelogEntry[]): { label: string; entries: ChangelogEntry[] }[] {
-  const groups: Record<string, ChangelogEntry[]> = {};
+interface DayGroup {
+  date: string;
+  label: string;
+  entries: ChangelogEntry[];
+}
+
+interface MonthGroup {
+  label: string;
+  days: DayGroup[];
+}
+
+function filterEntries(entries: ChangelogEntry[], category: ChangeCategory | "all"): ChangelogEntry[] {
+  if (category === "all") return entries;
+  return entries
+    .map((entry) => ({
+      ...entry,
+      changes: entry.changes.filter((c) => c.category === category),
+    }))
+    .filter((entry) => entry.changes.length > 0);
+}
+
+function groupByMonthAndDay(entries: ChangelogEntry[]): MonthGroup[] {
+  const dayMap: Record<string, ChangelogEntry[]> = {};
 
   for (const entry of entries) {
     const date = new Date(entry.published_at);
-    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    if (!groups[key]) groups[key] = [];
-    groups[key].push(entry);
+    const dayKey = `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}-${String(date.getUTCDate()).padStart(2, "0")}`;
+    if (!dayMap[dayKey]) dayMap[dayKey] = [];
+    dayMap[dayKey].push(entry);
   }
 
-  return Object.entries(groups)
+  const sortedDays = Object.entries(dayMap)
     .sort(([a], [b]) => b.localeCompare(a))
-    .map(([, entries]) => {
-      const date = new Date(entries[0].published_at);
+    .map(([dayKey, dayEntries]): DayGroup => {
+      const [y, m, d] = dayKey.split("-").map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d));
       return {
-        label: date.toLocaleDateString("en-US", { month: "long", year: "numeric" }),
-        entries,
+        date: dayKey,
+        label: date.toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          timeZone: "UTC",
+        }),
+        entries: dayEntries,
+      };
+    });
+
+  const monthMap: Record<string, DayGroup[]> = {};
+  for (const day of sortedDays) {
+    const monthKey = day.date.slice(0, 7);
+    if (!monthMap[monthKey]) monthMap[monthKey] = [];
+    monthMap[monthKey].push(day);
+  }
+
+  return Object.entries(monthMap)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .map(([monthKey, days]) => {
+      const [y, m] = monthKey.split("-").map(Number);
+      const date = new Date(Date.UTC(y, m - 1, 1));
+      return {
+        label: date.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" }),
+        days,
       };
     });
 }
 
 export function ChangelogTimeline({ entries }: { entries: ChangelogEntry[] }) {
-  const [activeFilter, setActiveFilter] = useState<ChangelogUrgency | "all">("all");
+  const [activeFilter, setActiveFilter] = useState<ChangeCategory | "all">("all");
 
-  const filtered = activeFilter === "all"
-    ? entries
-    : entries.filter((e) => e.urgency === activeFilter);
-
-  const months = groupByMonth(filtered);
+  const filtered = filterEntries(entries, activeFilter);
+  const months = groupByMonthAndDay(filtered);
 
   return (
     <div>
-      <div className="flex items-center gap-1.5 mb-10">
+      <div className="flex flex-wrap items-center gap-1.5 mb-10">
         {FILTERS.map((f) => (
           <button
             key={f.key}
@@ -67,7 +114,6 @@ export function ChangelogTimeline({ entries }: { entries: ChangelogEntry[] }) {
         <div className="space-y-8">
           {months.map((month) => (
             <section key={month.label}>
-              {/* Month header */}
               <div className="relative pl-8 ml-[5px] mb-4">
                 <div className="absolute -left-[10px] top-1/2 -translate-y-1/2 h-5 w-5 rounded-full bg-[#dde4db] dark:bg-[#2A322A] flex items-center justify-center">
                   <div className="h-2 w-2 rounded-full bg-[#9B9B8E] dark:bg-[#A8B0A6]" />
@@ -77,10 +123,26 @@ export function ChangelogTimeline({ entries }: { entries: ChangelogEntry[] }) {
                 </h2>
               </div>
 
-              {/* Entries with continuous timeline line */}
               <div className="relative border-l-[2px] border-[#dde4db] dark:border-[#2A322A] ml-[5px]">
-                {month.entries.map((entry) => (
-                  <ChangelogTimelineEntry key={entry.id} entry={entry} />
+                {month.days.map((day) => (
+                  <div key={day.date} className="pb-6">
+                    <div className="relative pl-8 pb-4">
+                      <div className="absolute -left-[5px] top-[6px] z-10 h-2 w-2 rounded-full bg-[#9B9B8E] dark:bg-[#A8B0A6]" />
+                      <h3 className="font-heading font-semibold text-[13px] text-[#5A5A6E] dark:text-[#A8B0A6]">
+                        {day.label}
+                      </h3>
+                    </div>
+
+                    {activeFilter === "all" && (
+                      <div className="pl-8">
+                        <DailyDigestCard date={day.date} />
+                      </div>
+                    )}
+
+                    {day.entries.map((entry) => (
+                      <ChangelogTimelineEntry key={entry.id} entry={entry} />
+                    ))}
+                  </div>
                 ))}
               </div>
             </section>

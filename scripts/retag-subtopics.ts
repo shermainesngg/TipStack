@@ -42,10 +42,11 @@ const RULES: Record<string, SubTopicRule[]> = {
     { subTopic: "Context Management", keywords: ["context", "context_management", "context-management", "window", "memory", "token"] },
   ],
   workflow_patterns: [
-    { subTopic: "CI/CD Integration", keywords: ["cicd", "ci_cd", "ci/cd", "continuous integration", "deploy", "github-action", "github action"] },
-    { subTopic: "Multi-Agent Setups", keywords: ["multi-agent", "agent-team", "orchestrat", "parallel", "worktree", "subagent", "harness", "archon", "agent teams"] },
-    { subTopic: "Routines", keywords: ["routine", "routines", "scheduled", "recurring", "monitor", "watch", "24/7", "cron", "cloud agent", "set up"] },
-    { subTopic: "Automation", keywords: ["automat", "n8n", "pipeline", "batch", "local", "tool", "infrastructure", "gateway", "wiki", "obsidian", "tts", "transcri", "voice", "gpu", "inference", "cad", "browser", "replay", "rss", "memory", "script", "hook", "prompt", "cost", "token"] },
+    { subTopic: "CI/CD Integration", keywords: ["cicd", "ci_cd", "ci/cd", "continuous integration", "deploy", "github-action", "github action", "ci-automation"] },
+    { subTopic: "Multi-Agent Setups", keywords: ["multi-agent", "agent-team", "orchestrat", "parallel", "worktree", "subagent", "harness", "archon", "agent teams", "delegation"] },
+    { subTopic: "Routines & Scheduling", keywords: ["routine", "routines", "scheduled", "recurring", "monitor", "watch", "24/7", "cron", "cloud agent"] },
+    { subTopic: "Knowledge Management", keywords: ["wiki", "obsidian", "knowledge", "research", "notebook", "workspace", "note-taking", "markdown wiki"] },
+    { subTopic: "Pipeline Automation", keywords: ["n8n", "pipeline", "batch", "rss", "content-curation", "automat", "replay", "browser automat", "gateway", "multimedia"] },
   ],
   mcp_and_integrations: [
     { subTopic: "MCP Servers", keywords: ["mcp-server", "mcp_server", "mcp server", "protocol", "mcp"] },

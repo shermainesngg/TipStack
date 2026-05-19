@@ -1,24 +1,14 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion } from "framer-motion";
-import { FeedPostCard, DateSeparator } from "./feed-post-card";
+import { DateSeparator } from "./feed-post-card";
+import { FeedCarousel } from "./feed-carousel";
 import type { FeedPost } from "@/types";
-
-const MAX_PER_DAY = 3;
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 100, damping: 20 },
-  },
-};
 
 function getDateKey(dateStr: string): string {
   return new Date(dateStr).toDateString();
 }
+
 
 function groupByDate(posts: FeedPost[]): { date: string; posts: FeedPost[] }[] {
   const groups: { date: string; posts: FeedPost[] }[] = [];
@@ -53,7 +43,6 @@ export function FeedScroll({
   const [posts, setPosts] = useState(initialPosts);
   const [cursor, setCursor] = useState(initialCursor);
   const [loading, setLoading] = useState(false);
-  const [expandedDays, setExpandedDays] = useState<Set<string>>(new Set());
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const loadMore = useCallback(async () => {
@@ -106,54 +95,14 @@ export function FeedScroll({
 
   const groups = groupByDate(posts);
 
-  const toggleDay = (dateKey: string) => {
-    setExpandedDays((prev) => {
-      const next = new Set(prev);
-      if (next.has(dateKey)) next.delete(dateKey);
-      else next.add(dateKey);
-      return next;
-    });
-  };
-
   return (
-    <div className="space-y-4">
-      {groups.map((group) => {
-        const dateKey = getDateKey(group.date);
-        const isExpanded = expandedDays.has(dateKey);
-        const visiblePosts = isExpanded
-          ? group.posts
-          : group.posts.slice(0, MAX_PER_DAY);
-        const hiddenCount = group.posts.length - MAX_PER_DAY;
-
-        return (
-          <div key={group.date}>
-            <DateSeparator date={group.date} />
-            <div className="space-y-4 mt-3">
-              {visiblePosts.map((post, i) => (
-                <motion.div
-                  key={post.id}
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
-                  transition={{ delay: i * 0.05 }}
-                >
-                  <FeedPostCard post={post} />
-                </motion.div>
-              ))}
-            </div>
-            {hiddenCount > 0 && (
-              <button
-                onClick={() => toggleDay(dateKey)}
-                className="mt-3 w-full text-center text-[13px] font-medium text-[#5A5A6E] dark:text-[#A8B0A6] hover:text-[#1A1A2E] dark:hover:text-[#EDF2EC] transition-colors py-2"
-              >
-                {isExpanded
-                  ? "Show less"
-                  : `Show ${hiddenCount} more`}
-              </button>
-            )}
-          </div>
-        );
-      })}
+    <div className="space-y-6">
+      {groups.map((group) => (
+        <div key={group.date}>
+          <DateSeparator date={group.date} />
+          <FeedCarousel posts={group.posts} />
+        </div>
+      ))}
 
       <div ref={sentinelRef} className="h-px" />
 

@@ -6,7 +6,7 @@ import { ChangelogTimeline } from "@/components/changelog-filter";
 export const metadata: Metadata = {
   title: "Changelog Radar — TipStack",
   description:
-    "Track Anthropic releases and AI tool changes with urgency-classified changelog entries.",
+    "Track Anthropic releases and AI tool changes — each update categorized by type.",
 };
 
 async function getCachedEntries() {
@@ -29,8 +29,8 @@ export default async function ChangelogPage() {
         Changelog Radar
       </h1>
       <p className="text-[16.5px] text-[#5A5A6E] dark:text-[#A8B0A6] leading-relaxed mb-8 max-w-[55ch]">
-        Anthropic releases and AI tool changes, classified by urgency so you
-        never miss a breaking change.
+        Anthropic releases and AI tool changes — every update categorized so you
+        can filter by what matters.
       </p>
 
       {entries.length === 0 ? (

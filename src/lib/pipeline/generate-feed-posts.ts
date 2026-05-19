@@ -58,11 +58,23 @@ A feed post is a short alert that tells practitioners what just changed. It link
 
 Respond with valid JSON matching the schema provided.`;
 
+const MAX_FEED_POSTS_PER_RUN = 8;
+const MIN_PRIORITY = 5;
+
+interface FeedPostCandidate {
+  headline: string;
+  summary: string;
+  priority: number;
+  update: ArticleUpdate;
+}
+
 export async function generateFeedPosts(
   articleUpdates: ArticleUpdate[],
   pipelineRunId?: string
 ): Promise<number> {
   if (articleUpdates.length === 0) return 0;
+
+  const candidates: FeedPostCandidate[] = [];
 
   await pMap(articleUpdates, async (update) => {
     const article = await getContentById(update.contentId);
@@ -93,16 +105,30 @@ Platforms involved: ${update.sourcePlatforms.join(", ")}`,
       jsonSchema: FEED_POST_SCHEMA,
     });
 
-    await insertFeedPost({
+    candidates.push({
       headline: result.headline,
       summary: result.summary,
       priority: Math.max(1, Math.min(10, Math.round(result.priority))),
-      sourceUrls: update.sourceUrls,
-      topicContentId: update.contentId,
-      sourcePlatforms: update.sourcePlatforms,
-      pipelineRunId,
+      update,
     });
   });
 
-  return articleUpdates.length;
+  const toPublish = candidates
+    .filter((c) => c.priority >= MIN_PRIORITY)
+    .sort((a, b) => b.priority - a.priority)
+    .slice(0, MAX_FEED_POSTS_PER_RUN);
+
+  for (const candidate of toPublish) {
+    await insertFeedPost({
+      headline: candidate.headline,
+      summary: candidate.summary,
+      priority: candidate.priority,
+      sourceUrls: candidate.update.sourceUrls,
+      topicContentId: candidate.update.contentId,
+      sourcePlatforms: candidate.update.sourcePlatforms,
+      pipelineRunId,
+    });
+  }
+
+  return toPublish.length;
 }

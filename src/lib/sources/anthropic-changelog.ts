@@ -6,7 +6,7 @@ import {
 } from "./config";
 import { isChangelogUrlProcessed, insertChangelogEntry } from "@/lib/supabase/queries";
 import { callClaudeCode, pMap } from "@/lib/ai/claude-code";
-import type { ChangelogUrgency } from "@/types";
+import type { ChangeCategory } from "@/types";
 
 interface RawChangelogItem {
   title: string;
@@ -15,42 +15,55 @@ interface RawChangelogItem {
   body: string;
 }
 
-interface ClassifiedEntry {
-  urgency: ChangelogUrgency;
-  headline: string;
-  changes: string[];
+interface ClassifiedChange {
+  description: string;
+  category: ChangeCategory;
   affected_tools: string[];
+}
+
+interface ClassifiedEntry {
+  headline: string;
   version: string | null;
+  changes: ClassifiedChange[];
 }
 
 const CLASSIFICATION_SCHEMA = {
   type: "object",
   properties: {
-    urgency: {
-      type: "string",
-      enum: ["breaking", "important", "informational"],
-      description: "breaking = requires user action or may break existing workflows. important = significant new capability worth adopting. informational = minor fix or improvement.",
-    },
     headline: {
       type: "string",
       description: "One short sentence (under 80 chars) summarizing the theme of this release. E.g. 'New plugin system and history search'.",
-    },
-    changes: {
-      type: "array",
-      items: { type: "string" },
-      description: "2-5 bullet points, each a concise description of one change (under 100 chars each). Start each with a verb.",
-    },
-    affected_tools: {
-      type: "array",
-      items: { type: "string", enum: ["claude_code", "claude_api", "claude_desktop", "anthropic_sdk"] },
-      description: "Which tools are affected by this change.",
     },
     version: {
       type: ["string", "null"],
       description: "Version string if applicable (e.g., 'v2.1.0'), or null if not a versioned release.",
     },
+    changes: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          description: {
+            type: "string",
+            description: "Concise description of one change (under 100 chars). Start with a verb.",
+          },
+          category: {
+            type: "string",
+            enum: ["new_feature", "improvement", "breaking_change", "bug_fix", "deprecation", "performance"],
+            description: "new_feature = brand new capability. improvement = enhancement to existing feature. breaking_change = requires user action or may break existing workflows. bug_fix = fix for incorrect behavior. deprecation = feature being phased out. performance = speed or resource optimization.",
+          },
+          affected_tools: {
+            type: "array",
+            items: { type: "string", enum: ["claude_code", "claude_api", "claude_desktop", "anthropic_sdk"] },
+            description: "Which tools this specific change affects.",
+          },
+        },
+        required: ["description", "category", "affected_tools"],
+      },
+      description: "2-8 individual changes, each categorized independently.",
+    },
   },
-  required: ["urgency", "headline", "changes", "affected_tools", "version"],
+  required: ["headline", "version", "changes"],
 };
 
 function stripHtmlTags(html: string): string {
@@ -145,13 +158,16 @@ async function fetchWhatsNewPages(): Promise<RawChangelogItem[]> {
 
 async function classifyEntry(item: RawChangelogItem): Promise<ClassifiedEntry> {
   const result = await callClaudeCode<ClassifiedEntry>({
-    systemPrompt: "You are a technical changelog classifier for AI developer tools. Classify each changelog entry by urgency and extract structured metadata. Be concise and precise.",
-    userMessage: `Classify this changelog entry:\n\nTitle: ${item.title}\n\nContent:\n${item.body}`,
+    systemPrompt: "You are a technical changelog classifier for AI developer tools. Extract individual changes from the release and classify each one independently. Be concise and precise.",
+    userMessage: `Classify this changelog entry into individual changes:\n\nTitle: ${item.title}\n\nContent:\n${item.body}`,
     jsonSchema: CLASSIFICATION_SCHEMA,
   });
 
-  if (hasBreakingKeywords(item.body) && result.urgency !== "breaking") {
-    result.urgency = "breaking";
+  if (hasBreakingKeywords(item.body)) {
+    const hasBreaking = result.changes.some((c) => c.category === "breaking_change");
+    if (!hasBreaking && result.changes.length > 0) {
+      result.changes[0].category = "breaking_change";
+    }
   }
 
   return result;
@@ -191,18 +207,20 @@ export async function fetchAndClassifyChangelog(): Promise<ChangelogFetchResult>
 
       await insertChangelogEntry({
         title: item.title,
-        summary: classified.headline,
         headline: classified.headline,
-        changes: classified.changes,
-        urgency: classified.urgency,
         sourceUrl: item.url,
-        affectedTools: classified.affected_tools,
         version: classified.version,
         publishedAt: item.publishedAt,
+        changes: classified.changes.map((c) => ({
+          description: c.description,
+          category: c.category,
+          affectedTools: c.affected_tools,
+        })),
       });
 
       stats.inserted++;
-      console.log(`  [${classified.urgency}] ${item.title}`);
+      const categories = [...new Set(classified.changes.map((c) => c.category))];
+      console.log(`  [${categories.join(",")}] ${item.title}`);
     } catch (err) {
       stats.errors++;
       console.error(`  Failed to process "${item.title}":`, err);

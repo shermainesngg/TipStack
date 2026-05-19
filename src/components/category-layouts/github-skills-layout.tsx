@@ -53,7 +53,7 @@ function ContentCard({ content }: { content: Content }) {
           </span>
         </div>
 
-        <h3 className="font-heading font-semibold text-[15px] leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2">
+        <h3 className="font-heading font-semibold text-[15px] leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2 title-clamp" title={content.title}>
           {content.title}
         </h3>
 

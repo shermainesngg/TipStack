@@ -19,6 +19,7 @@ import {
 import {
   toUrlSlug,
   getCategoryFilters,
+  getCategoryConfig,
   type CategoryConfig,
 } from "@/lib/categories";
 
@@ -47,7 +48,14 @@ function CategoryItem({
   const [hovered, setHovered] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
   const categoryPath = `/categories/${toUrlSlug(config.slug)}`;
-  const filters = showSubmenu ? getCategoryFilters(config.slug) : [];
+  const activityFilters = showSubmenu ? getCategoryFilters(config.slug) : [];
+  const catConfig = showSubmenu ? getCategoryConfig(config.slug) : null;
+  const subTopics = catConfig?.subTopics ?? [];
+  const hasActivityFilters = activityFilters.length > 0;
+  const menuItems = hasActivityFilters
+    ? activityFilters.map((f) => ({ label: f.label, href: `${categoryPath}?activity=${f.key}` }))
+    : subTopics.map((st) => ({ label: st, href: `${categoryPath}#${st.toLowerCase().replace(/\s+/g, "-").replace(/&/g, "")}` }));
+
 
   const handleEnter = () => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -79,7 +87,7 @@ function CategoryItem({
           />
         )}
         <span className="flex-1">{config.label}</span>
-        {filters.length > 0 && (
+        {menuItems.length > 0 && (
           <ChevronRight
             className={`size-3.5 transition-opacity ${hovered || isActive ? "opacity-40" : "opacity-0"}`}
           />
@@ -87,7 +95,7 @@ function CategoryItem({
       </Link>
 
       <AnimatePresence>
-        {filters.length > 0 && hovered && (
+        {menuItems.length > 0 && hovered && (
           <motion.div
             initial={{ opacity: 0, x: -4 }}
             animate={{ opacity: 1, x: 0 }}
@@ -107,16 +115,16 @@ function CategoryItem({
               All {config.label}
             </Link>
             <div className="mx-3 my-1 h-px bg-[#dde4db] dark:bg-[#3A433A]" />
-            {filters.map((f) => (
+            {menuItems.map((item) => (
               <Link
-                key={f.key}
-                href={`${categoryPath}?activity=${f.key}`}
+                key={item.label}
+                href={item.href}
                 className="block px-3.5 py-1.5 text-[13px] text-[#5A5A6E] dark:text-[#A8B0A6]
                   hover:bg-[#dde4db]/50 hover:text-[#1A1A2E]
                   dark:hover:bg-[#2A322A]/50 dark:hover:text-[#EDF2EC]
                   transition-colors"
               >
-                {f.label}
+                {item.label}
               </Link>
             ))}
           </motion.div>

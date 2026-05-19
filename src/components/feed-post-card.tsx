@@ -12,12 +12,12 @@ const PLATFORM_LABELS: Record<Platform, string> = {
 };
 
 const PLATFORM_COLORS: Record<Platform, string> = {
-  youtube: "text-[#8B4A4A] bg-[#f0dbd8] dark:text-[#E5A097] dark:bg-[#3D2424]",
-  reddit: "text-[#7B6230] bg-[#f0e8d4] dark:text-[#D4B875] dark:bg-[#2E2818]",
-  twitter: "text-[#5E3F96] bg-[#e0d8ef] dark:text-[#B89DD4] dark:bg-[#2A1F3D]",
-  news: "text-[#2D6040] bg-[#d2e8d6] dark:text-[#7EBE8E] dark:bg-[#1A3327]",
-  docs: "text-[#4A6B8B] bg-[#d8e4f0] dark:text-[#97C5E5] dark:bg-[#1F2E3D]",
-  github: "text-[#5A5A6E] bg-[#e0e4e0] dark:text-[#C8D0C6] dark:bg-[#2A322A]",
+  youtube: "text-[#6E2B2B] bg-[#F2C4B8] dark:text-[#E8A89E] dark:bg-[#3D2020]",
+  reddit: "text-[#5E4515] bg-[#ECCF90] dark:text-[#D4B060] dark:bg-[#2E2510]",
+  twitter: "text-[#582848] bg-[#D8BFD2] dark:text-[#C898B8] dark:bg-[#2E1828]",
+  news: "text-[#3A5015] bg-[#D2E098] dark:text-[#B5D070] dark:bg-[#1E2D12]",
+  docs: "text-[#1A4A40] bg-[#B8D8D0] dark:text-[#80BEB4] dark:bg-[#152E28]",
+  github: "text-[#3A423A] bg-[#CDD5CA] dark:text-[#C8D0C6] dark:bg-[#2A322A]",
 };
 
 const CATEGORY_LABELS: Record<ContentCategory, string> = {
@@ -33,13 +33,13 @@ const CATEGORY_LABELS: Record<ContentCategory, string> = {
 const TOKEN_CONTEXT_TAGS = new Set(["cost_optimization", "context_management"]);
 
 const CATEGORY_TAG_COLORS: Record<ContentCategory, string> = {
-  claude_code_features: "text-[#9B6B2F] bg-[#faf5ee] dark:text-[#D4B875] dark:bg-[#2a2318]",
-  security_and_guardrails: "text-[#8B4A4A] bg-[#faf0ef] dark:text-[#E5A097] dark:bg-[#2e1e1c]",
-  github_skills: "text-[#5E3F96] bg-[#f3eff8] dark:text-[#B89DD4] dark:bg-[#221e2e]",
-  prompting_and_rules: "text-[#7B6230] bg-[#f9f5ec] dark:text-[#D4B875] dark:bg-[#2a261a]",
-  workflow_patterns: "text-[#3D6080] bg-[#eef5fa] dark:text-[#97C5E5] dark:bg-[#1a2530]",
-  mcp_and_integrations: "text-[#2D6040] bg-[#f0f8f2] dark:text-[#7EBE8E] dark:bg-[#1a2b1e]",
-  debugging_and_testing: "text-[#4A5A8B] bg-[#eff2fa] dark:text-[#97A5D4] dark:bg-[#1c2030]",
+  claude_code_features: "text-[#5E4515] bg-[#ECCF90] dark:text-[#D4B060] dark:bg-[#2E2510]",
+  security_and_guardrails: "text-[#6E2B2B] bg-[#F2C4B8] dark:text-[#E8A89E] dark:bg-[#3D2020]",
+  github_skills: "text-[#582848] bg-[#D8BFD2] dark:text-[#C898B8] dark:bg-[#2E1828]",
+  prompting_and_rules: "text-[#3A5015] bg-[#D2E098] dark:text-[#B5D070] dark:bg-[#1E2D12]",
+  workflow_patterns: "text-[#1A4A40] bg-[#B8D8D0] dark:text-[#80BEB4] dark:bg-[#152E28]",
+  mcp_and_integrations: "text-[#3A5015] bg-[#D2E098] dark:text-[#B5D070] dark:bg-[#1E2D12]",
+  debugging_and_testing: "text-[#582848] bg-[#D8BFD2] dark:text-[#C898B8] dark:bg-[#2E1828]",
 };
 
 function formatFeedTime(dateStr: string): string {
@@ -92,7 +92,7 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
             return (
               <span
                 key={platform}
-                className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide ${PLATFORM_COLORS[platform as Platform] ?? ""}`}
+                className={`inline-flex items-center text-[12px] font-medium px-3 py-1 rounded-full tracking-wide ${PLATFORM_COLORS[platform as Platform] ?? ""}`}
               >
                 {label}
               </span>
@@ -103,7 +103,7 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
           </span>
         </div>
 
-        <h2 className="font-heading font-semibold text-lg leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2">
+        <h2 className="font-heading font-semibold text-lg leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2 title-clamp" title={post.headline}>
           {post.headline}
         </h2>
 
@@ -119,18 +119,18 @@ export function FeedPostCard({ post }: { post: FeedPost }) {
           <div className="flex items-center gap-1.5 flex-wrap">
             {post.topic_category && (
               <span
-                className={`inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide ${CATEGORY_TAG_COLORS[post.topic_category] ?? ""}`}
+                className={`inline-flex items-center text-[12px] font-medium px-3 py-1 rounded-full tracking-wide ${CATEGORY_TAG_COLORS[post.topic_category] ?? ""}`}
               >
                 {CATEGORY_LABELS[post.topic_category] ?? post.topic_category}
               </span>
             )}
             {post.topic_sub_topic && (
-              <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide text-[#7B6230] bg-[#f0e8d4] dark:text-[#D4B875] dark:bg-[#2E2818]">
+              <span className="inline-flex items-center text-[12px] font-medium px-3 py-1 rounded-full tracking-wide text-[#5E4515] bg-[#ECCF90] dark:text-[#D4B060] dark:bg-[#2E2510]">
                 {post.topic_sub_topic}
               </span>
             )}
             {isTokenContext && (
-              <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md tracking-wide text-[#3D6080] bg-[#d8e4f0] dark:text-[#97C5E5] dark:bg-[#1F2E3D]">
+              <span className="inline-flex items-center text-[12px] font-medium px-3 py-1 rounded-full tracking-wide text-[#1A4A40] bg-[#B8D8D0] dark:text-[#80BEB4] dark:bg-[#152E28]">
                 Token &amp; Context
               </span>
             )}

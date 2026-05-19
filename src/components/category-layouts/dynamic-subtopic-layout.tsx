@@ -73,7 +73,7 @@ function FeaturedArticleCard({ content, tint, darkTint }: { content: Content; ti
           )}
         </div>
 
-        <h3 className="font-heading font-bold text-lg leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2">
+        <h3 className="font-heading font-bold text-lg leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2 title-clamp" title={content.title}>
           {content.title}
         </h3>
 
@@ -123,7 +123,7 @@ function ArticleCard({ content, tint, darkTint }: { content: Content; tint: stri
           )}
         </div>
 
-        <h3 className="font-heading font-semibold text-[15px] leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2">
+        <h3 className="font-heading font-semibold text-[15px] leading-snug text-[#1A1A2E] dark:text-[#EDF2EC] line-clamp-2 title-clamp" title={content.title}>
           {content.title}
         </h3>
 
@@ -149,7 +149,7 @@ interface SubTopicGroup {
   articles: Content[];
 }
 
-const MIN_GROUP_SIZE = 2;
+const MIN_GROUP_SIZE = 1;
 
 function groupBySubTopic(content: Content[]): SubTopicGroup[] {
   const groups = new Map<string, Content[]>();

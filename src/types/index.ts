@@ -150,20 +150,31 @@ export interface FeedPost {
 
 // ─── Changelog Types ──────────────────────────────────────────────────────
 
-export type ChangelogUrgency = "breaking" | "important" | "informational";
+export type ChangeCategory =
+  | "new_feature"
+  | "improvement"
+  | "breaking_change"
+  | "bug_fix"
+  | "deprecation"
+  | "performance";
+
+export interface ChangelogChange {
+  id: string;
+  changelog_entry_id: string;
+  description: string;
+  category: ChangeCategory;
+  affected_tools: string[];
+}
 
 export interface ChangelogEntry {
   id: string;
   title: string;
-  summary: string;
   headline: string | null;
-  changes: string[];
-  urgency: ChangelogUrgency;
   source_url: string;
-  affected_tools: string[];
   version: string | null;
   published_at: string;
   created_at: string;
+  changes: ChangelogChange[];
 }
 
 // ─── Source Config Types ────────────────────────────────────────────────────
