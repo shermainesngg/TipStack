@@ -1,5 +1,5 @@
 import { callClaudeCode, pMap } from "@/lib/ai/claude-code";
-import { insertFeedPost } from "@/lib/supabase/queries";
+import { insertFeedPost, pruneOldFeedPosts } from "@/lib/supabase/queries";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { SourceUrl } from "@/types";
 
@@ -129,6 +129,8 @@ Platforms involved: ${update.sourcePlatforms.join(", ")}`,
       pipelineRunId,
     });
   }
+
+  await pruneOldFeedPosts(16);
 
   return toPublish.length;
 }

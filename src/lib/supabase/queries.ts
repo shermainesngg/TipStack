@@ -1024,3 +1024,27 @@ export async function insertFeedPost(params: {
   if (error) throw new Error(`Failed to insert feed post: ${error.message}`);
   return data.id;
 }
+
+/** Keep only the N most recent feed posts, delete the rest */
+export async function pruneOldFeedPosts(keep = 16): Promise<number> {
+  const client = getServiceClient();
+
+  const { data: recent } = await client
+    .from("feed_posts")
+    .select("id")
+    .order("published_at", { ascending: false })
+    .limit(keep);
+
+  if (!recent || recent.length < keep) return 0;
+
+  const keepIds = recent.map((r) => r.id);
+
+  const { data: old, error } = await client
+    .from("feed_posts")
+    .delete()
+    .not("id", "in", `(${keepIds.join(",")})`)
+    .select("id");
+
+  if (error) throw new Error(`Failed to prune feed posts: ${error.message}`);
+  return old?.length ?? 0;
+}
