@@ -9,6 +9,7 @@ import Link from "next/link";
 import { getAllCategoryConfigs } from "@/lib/categories";
 import { CategorySidebar, MobileTopicDrawer } from "@/components/category-sidebar";
 import { HeaderNav } from "@/components/header-nav";
+import { SearchOverlay } from "@/components/search-overlay";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -58,7 +59,8 @@ export default function RootLayout({
             <Suspense>
               <HeaderNav />
             </Suspense>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-1">
+              <SearchOverlay />
               <Suspense>
                 <MobileTopicDrawer categories={categories} />
               </Suspense>

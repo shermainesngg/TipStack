@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "./server";
 import { createBrowserClient } from "./browser";
-import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, FeedPost, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogChange, ChangeCategory } from "@/types";
+import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, ContentCategory, FeedPost, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogChange, ChangeCategory } from "@/types";
 import { normalizeToolTag, expandToolAliases } from "@/lib/tools";
 
 const CARD_COLUMNS = "id, title, slug, summary, content_type, status, tags_tool, tags_focus, tags_workflow, tags_domain, tags_category, source_urls, created_at, published_at";
@@ -1047,4 +1047,39 @@ export async function pruneOldFeedPosts(keep = 16): Promise<number> {
 
   if (error) throw new Error(`Failed to prune feed posts: ${error.message}`);
   return old?.length ?? 0;
+}
+
+// ─── search ───────────────────────────────────────────────────────────────────
+
+export interface SearchResult {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string;
+  tags_category: ContentCategory;
+  sub_topic: string | null;
+  tags_tool: string[];
+  tags_focus: string[];
+  tags_workflow: string[];
+  published_at: string;
+  source_urls: SourceUrl[];
+  rank: number;
+  headline_title: string;
+  headline_summary: string;
+}
+
+export async function searchContent(
+  query: string,
+  limit = 5,
+  offset = 0
+): Promise<SearchResult[]> {
+  const { data, error } = await getReadClient()
+    .rpc("search_content", {
+      search_query: query,
+      result_limit: limit,
+      result_offset: offset,
+    });
+
+  if (error) throw new Error(`Search failed: ${error.message}`);
+  return (data ?? []) as SearchResult[];
 }
