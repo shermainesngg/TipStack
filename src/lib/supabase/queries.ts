@@ -103,6 +103,14 @@ export async function updateRawContentStatus(
 
 // ─── content (writes — service client) ─────────────────────────────────────
 
+/**
+ * Minimum dedup quality score (1-10) for an article to auto-publish. Pieces at
+ * or above this bar go straight to `published`; anything below is held as
+ * `pending_review` for manual approval. Callers pass the source material's
+ * quality score; when none is provided the piece auto-publishes.
+ */
+const AUTO_PUBLISH_MIN_SCORE = 7;
+
 /** Insert a synthesized content piece */
 export async function insertContent(params: {
   title: string;
@@ -116,18 +124,22 @@ export async function insertContent(params: {
   tagsDomain: string[];
   tagsCategory: string;
   sourceUrls: SourceUrl[];
+  qualityScore?: number;
   subTopic?: string;
   skillId?: string;
   practicalUseCase?: string;
   tryThis?: string;
 }): Promise<string> {
+  const autoPublish =
+    params.qualityScore == null || params.qualityScore >= AUTO_PUBLISH_MIN_SCORE;
+
   const insertData: Record<string, unknown> = {
     title: params.title,
     slug: params.slug,
     summary: params.summary,
     body: params.body,
     content_type: params.contentType,
-    status: "pending_review",
+    status: autoPublish ? "published" : "pending_review",
     tags_tool: params.tagsTool,
     tags_focus: params.tagsFocus,
     tags_workflow: params.tagsWorkflow,
@@ -135,6 +147,10 @@ export async function insertContent(params: {
     tags_category: params.tagsCategory,
     source_urls: params.sourceUrls,
   };
+
+  if (autoPublish) {
+    insertData.published_at = new Date().toISOString();
+  }
 
   if (params.subTopic) {
     insertData.sub_topic = params.subTopic;
@@ -624,10 +640,29 @@ export async function getFeedPosts(
 
 // ─── topic matching (service client — pipeline only) ────────────────────────
 
-/** Find an existing published article matching incoming tags via array overlap */
+// A living article that has accumulated this many focus tags or sources has lost
+// topical focus — it's a "magnet" that absorbs loosely-related items. Merging into
+// one produces a sprawling article that no feed headline can honestly describe, so
+// we refuse the merge and let the incoming item become its own focused article.
+const MAX_HOST_FOCUS_TAGS = 8;
+const MAX_HOST_SOURCES = 8;
+
+/**
+ * Find an existing published article matching incoming tags via array overlap.
+ *
+ * Two guards keep merges honest:
+ * 1. **Category gate** — a security tip must not merge into a Claude Code features
+ *    comparison just because they share the ubiquitous `claude_code` tag. Living
+ *    articles live on per-category pages, so cross-category merges are wrong by design.
+ * 2. **Breadth guard** — magnet articles (too many focus tags or sources) are skipped,
+ *    and overlap is normalized by host breadth so a focused host always beats a broad
+ *    one at equal raw overlap. This stops a narrow item from being absorbed into a
+ *    sprawling guide and then surfaced under a specific feed headline.
+ */
 export async function findMatchingArticle(
   tagsTool: string[],
-  tagsFocus: string[]
+  tagsFocus: string[],
+  category: ContentCategory
 ): Promise<(Content & { overlap: number }) | null> {
   if (tagsTool.length === 0 || tagsFocus.length === 0) return null;
 
@@ -635,6 +670,7 @@ export async function findMatchingArticle(
     .from("content")
     .select("*")
     .eq("status", "published")
+    .eq("tags_category", category)
     .overlaps("tags_tool", tagsTool)
     .overlaps("tags_focus", tagsFocus)
     .order("published_at", { ascending: false })
@@ -644,14 +680,27 @@ export async function findMatchingArticle(
   if (!data || data.length === 0) return null;
 
   let bestMatch: (Content & { overlap: number }) | null = null;
-  let bestOverlap = 0;
+  let bestScore = 0;
 
   for (const row of data) {
-    const toolOverlap = (row.tags_tool as string[]).filter((t: string) => tagsTool.includes(t)).length;
-    const focusOverlap = (row.tags_focus as string[]).filter((t: string) => tagsFocus.includes(t)).length;
+    const hostFocus = (row.tags_focus as string[]) ?? [];
+    const hostTool = (row.tags_tool as string[]) ?? [];
+    const hostSources = (row.source_urls as unknown[]) ?? [];
+
+    // Skip magnets — never merge into an article that has lost focus.
+    if (hostFocus.length >= MAX_HOST_FOCUS_TAGS || hostSources.length >= MAX_HOST_SOURCES) {
+      continue;
+    }
+
+    const toolOverlap = hostTool.filter((t: string) => tagsTool.includes(t)).length;
+    const focusOverlap = hostFocus.filter((t: string) => tagsFocus.includes(t)).length;
+    if (focusOverlap < 1) continue;
+
     const overlap = toolOverlap + focusOverlap;
-    if (overlap > bestOverlap) {
-      bestOverlap = overlap;
+    // Normalize by host breadth so a tight, on-topic article wins over a broad one.
+    const score = overlap / Math.sqrt(hostTool.length + hostFocus.length);
+    if (score > bestScore) {
+      bestScore = score;
       bestMatch = { ...(row as Content), overlap };
     }
   }

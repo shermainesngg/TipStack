@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { getFeedPosts } from "@/lib/supabase/queries";
 import type { Platform } from "@/types";
 
-const VALID_PLATFORMS = new Set<Platform>(["youtube", "reddit", "twitter", "news", "docs"]);
+const VALID_PLATFORMS = new Set<Platform>(["youtube", "reddit", "twitter", "news", "docs", "blog"]);
 
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;

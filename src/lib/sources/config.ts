@@ -163,3 +163,35 @@ export const CHANGELOG_WHATS_NEW_BASE = "https://code.claude.com/docs/en/whats-n
 export const CHANGELOG_MAX_RELEASES = 20;
 export const CHANGELOG_WHATS_NEW_WEEKS = 4;
 export const CHANGELOG_AFFECTED_TOOLS = ["claude_code", "claude_api", "claude_desktop", "anthropic_sdk"] as const;
+
+// ─── Blog Feeds ──────────────────────────────────────────────────────────────
+
+export interface BlogFeedConfig {
+  /** Display name of the publication */
+  name: string;
+  /** Author credited as the item creator */
+  author: string;
+  /** Public Atom/RSS feed URL (no auth) */
+  url: string;
+}
+
+/**
+ * High-signal AI blog feeds parsed as Atom/RSS. Each must be a free, public,
+ * full-content feed (same bar as the Hacker News source). Add more here to expand.
+ */
+export const BLOG_FEEDS: BlogFeedConfig[] = [
+  {
+    name: "Simon Willison's Weblog",
+    author: "Simon Willison",
+    url: "https://simonwillison.net/atom/everything/",
+  },
+];
+
+/** Max entries to consider per feed (newest first) */
+export const BLOG_MAX_ENTRIES = 20;
+
+/** Minimum cleaned-text length for an entry to be worth ingesting */
+export const BLOG_MIN_CONTENT_CHARS = 200;
+
+/** Cap on stored content length per item */
+export const BLOG_MAX_CONTENT_CHARS = 12000;

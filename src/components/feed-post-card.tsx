@@ -9,6 +9,7 @@ const PLATFORM_LABELS: Record<Platform, string> = {
   news: "News",
   docs: "Docs",
   github: "GitHub",
+  blog: "Blog",
 };
 
 const PLATFORM_COLORS: Record<Platform, string> = {
@@ -18,6 +19,7 @@ const PLATFORM_COLORS: Record<Platform, string> = {
   news: "text-[#3A5015] bg-[#D2E098] dark:text-[#B5D070] dark:bg-[#1E2D12]",
   docs: "text-[#1A4A40] bg-[#B8D8D0] dark:text-[#80BEB4] dark:bg-[#152E28]",
   github: "text-[#3A423A] bg-[#CDD5CA] dark:text-[#C8D0C6] dark:bg-[#2A322A]",
+  blog: "text-[#6E4A2B] bg-[#E8D2B8] dark:text-[#D4B08A] dark:bg-[#2E2418]",
 };
 
 const CATEGORY_LABELS: Record<ContentCategory, string> = {

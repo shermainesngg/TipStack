@@ -317,10 +317,20 @@ ${itemDescriptions}`,
     jsonSchema: SYNTHESIS_SCHEMA,
   });
 
+  // Per-piece quality = the best source item's dedup score. A piece synthesizes
+  // the strongest technique from its sources, so the max drives auto-publish.
+  const scoreById = new Map(
+    items.map((i: RawContent) => [i.id, i.raw_extract.quality_score ?? 0])
+  );
+
   let piecesCreated = 0;
 
   for (const piece of result.content_pieces) {
     const uniqueSlug = `${piece.slug}-${batchDate}`;
+    const qualityScore = Math.max(
+      0,
+      ...piece.source_items.map((id) => scoreById.get(id) ?? 0)
+    );
 
     await insertContent({
       title: piece.title,
@@ -334,6 +344,7 @@ ${itemDescriptions}`,
       tagsDomain: piece.tags_domain ?? [],
       tagsCategory: piece.tags_category ?? "claude_code_features",
       sourceUrls: piece.source_urls,
+      qualityScore,
       practicalUseCase: piece.practical_use_case,
       tryThis: piece.try_this,
     });

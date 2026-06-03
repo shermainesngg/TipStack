@@ -34,6 +34,7 @@ npx tsx scripts/fetch-reddit.ts      # Fetch new Reddit items
 npx tsx scripts/fetch-twitter.ts     # Fetch new Twitter items
 npx tsx scripts/fetch-news.ts        # Fetch AI news via Hacker News
 npx tsx scripts/fetch-docs.ts        # Fetch from documentation sources
+npx tsx scripts/fetch-blog.ts        # Fetch from AI blog feeds (Simon Willison, etc.)
 npx tsx scripts/fetch-all.ts         # Fetch from all sources
 npx tsx scripts/process-fetched.ts   # Run extraction on fetched items
 npx tsx scripts/push-content.ts      # Push extracted content through dedup + synthesis

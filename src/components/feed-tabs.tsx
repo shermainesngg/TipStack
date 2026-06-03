@@ -44,7 +44,7 @@ export function FeedTabs({
         key={tab}
         initialPosts={tab === "news" ? news : community}
         initialCursor={tab === "news" ? newsCursor : communityCursor}
-        platforms={tab === "news" ? "news" : "youtube,reddit,twitter,docs"}
+        platforms={tab === "news" ? "news" : "youtube,reddit,twitter,docs,blog"}
       />
     </div>
   );

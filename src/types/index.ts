@@ -4,7 +4,7 @@ export type ContentStatus = "pending_review" | "published" | "rejected";
 
 export type RawContentStatus = "ingested" | "filtered" | "merged" | "discarded";
 
-export type Platform = "youtube" | "reddit" | "twitter" | "news" | "docs" | "github";
+export type Platform = "youtube" | "reddit" | "twitter" | "news" | "docs" | "github" | "blog";
 
 export type ContentType = "quick_tip" | "deep_dive" | "roundup" | "update";
 
@@ -79,6 +79,7 @@ export interface ExtractionResult {
   tags_focus: string[];
   tags_workflow: string[];
   tags_domain: string[];
+  tags_category: ContentCategory;
   quality_signal: "high" | "medium" | "low";
   quality_score: number;
   source_creator: string;

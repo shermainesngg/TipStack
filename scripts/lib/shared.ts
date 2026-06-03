@@ -16,7 +16,7 @@ export const supabase = createClient(url, key, { auth: { persistSession: false }
 
 export interface FetchedItem {
   url: string;
-  platform: "youtube" | "reddit" | "twitter" | "news" | "docs" | "github";
+  platform: "youtube" | "reddit" | "twitter" | "news" | "docs" | "github" | "blog";
   content: string;
   creator: string;
   title: string;

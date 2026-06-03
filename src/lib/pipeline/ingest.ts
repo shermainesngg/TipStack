@@ -94,6 +94,7 @@ const BATCH_EXTRACTION_SCHEMA = {
           "tags_focus",
           "tags_workflow",
           "tags_domain",
+          "tags_category",
           "quality_score",
           "quality_signal",
           "source_creator",

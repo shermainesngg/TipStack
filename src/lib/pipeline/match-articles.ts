@@ -7,7 +7,7 @@ import {
   updateRawContentStatus,
 } from "@/lib/supabase/queries";
 import { getAllowedSubTopics } from "@/lib/categories";
-import type { RawContent, Content, ContentSummary, SourceUrl, FetchedItem, SynthesizedPiece } from "@/types";
+import type { RawContent, Content, ContentSummary, SourceUrl, FetchedItem, SynthesizedPiece, ContentCategory } from "@/types";
 
 function buildResynthesizeSchema(allowedSubTopics: string[]) {
   return {
@@ -24,7 +24,7 @@ function buildResynthesizeSchema(allowedSubTopics: string[]) {
       body: {
         type: "string",
         description:
-          "Full rewritten article body in markdown. Rewrite from scratch incorporating all sources — do not append.",
+          "Full rewritten article body in markdown. Rewrite from scratch incorporating all sources — do not append. Preserve and update any existing Mermaid diagrams and tables; prefer diagrams and structured formats over prose.",
       },
       tags_tool: {
         type: "array",
@@ -110,6 +110,25 @@ You receive an existing published article and new source material that covers th
 8. **Sub-topic.** Pick a sub-topic from the allowed list provided. Do NOT invent new sub-topics.
 9. **Sources section.** Include a "Sources" section at the end listing: source type, creator name, and link.
 10. **Actionable sections.** Generate a practical_use_case (concrete scenario starting with "When you..." or "If you...", 2-4 sentences) and try_this (specific action starting with an imperative verb, completable in under 5 minutes with exact commands/steps).
+
+## Visual Content — Use Diagrams Over Text
+
+Articles must not rely on text alone. Prefer diagrams, tables, and other structured formats over lengthy prose wherever possible. Use Mermaid code blocks (\`\`\`mermaid) for:
+
+- **Flowcharts**: Decision trees, setup workflows, "should I use X?" decisions
+- **Sequence diagrams**: API call flows, agent-to-tool interactions, auth flows
+- **Architecture diagrams**: System boundaries, data flow, component relationships
+- **Comparison tables**: Use markdown tables for feature comparisons, tool trade-offs
+
+Rules:
+- **Preserve and improve existing diagrams.** If the existing article already contains Mermaid diagrams or tables, carry them forward and update them to reflect the new source material — rewriting from scratch must NEVER strip visual content. Add new diagrams where the expanded material introduces a flow, decision, or system interaction.
+- Every deep_dive and roundup MUST include at least one Mermaid diagram — no exceptions
+- quick_tip pieces SHOULD include a small diagram (3-5 nodes) when the concept involves a flow, decision, or system interaction
+- Place the first diagram EARLY in the article (after the intro, before detailed steps) — it orients the reader visually before they read the details
+- Keep diagrams focused — max 8-10 nodes. Split into multiple diagrams if complex.
+- Use flowchart TD (top-down) or LR (left-right) for processes; sequenceDiagram for interactions between systems/actors
+- Label edges clearly — the diagram should be understandable without reading surrounding text
+- Diagrams REPLACE prose, not duplicate it — if a diagram shows the flow, do not re-describe the same flow in a paragraph beneath it
 
 Respond with valid JSON matching the schema provided.`;
 
@@ -213,13 +232,15 @@ export async function matchAndUpdateArticles(
     }));
     const sourcePlatforms = dedupeStrings(group.map((i) => i.platform));
 
-    const match = await findMatchingArticle(tagsTool, tagsFocus);
+    const category = dominantCategory(group);
+    const match = await findMatchingArticle(tagsTool, tagsFocus, category);
 
     if (match) {
       await resynthesizeArticle(match, group);
 
       if (checkArticleSize(match.body)) {
         const subPieces = await splitArticle(match, group);
+        const groupScore = maxQualityScore(group);
         for (const piece of subPieces) {
           const subId = await insertContent({
             title: piece.title,
@@ -233,6 +254,7 @@ export async function matchAndUpdateArticles(
             tagsDomain: piece.tags_domain,
             tagsCategory: piece.tags_category,
             sourceUrls: piece.source_urls,
+            qualityScore: groupScore,
           });
           results.push({
             contentId: subId,
@@ -383,7 +405,7 @@ You MUST pick one of these: ${allowedSubTopics.join(", ")}`;
   });
 }
 
-async function createNewArticle(
+export async function createNewArticle(
   items: RawContent[],
   batchDate: string
 ): Promise<string> {
@@ -455,6 +477,7 @@ Respond with valid JSON matching the schema provided.`,
     tagsDomain: piece.tags_domain ?? [],
     tagsCategory: piece.tags_category ?? "claude_code_features",
     sourceUrls,
+    qualityScore: maxQualityScore(items),
     subTopic: piece.sub_topic,
     practicalUseCase: piece.practical_use_case,
     tryThis: piece.try_this,
@@ -465,6 +488,29 @@ Respond with valid JSON matching the schema provided.`,
 
 function dedupeStrings(arr: string[]): string[] {
   return [...new Set(arr)];
+}
+
+/** Highest dedup quality score across a group's source items (drives auto-publish). */
+function maxQualityScore(group: RawContent[]): number {
+  return Math.max(0, ...group.map((i) => i.raw_extract.quality_score ?? 0));
+}
+
+/** Pick the most common category across a topic group's extracted items. */
+function dominantCategory(group: RawContent[]): ContentCategory {
+  const counts = new Map<ContentCategory, number>();
+  for (const item of group) {
+    const cat = item.raw_extract.tags_category;
+    if (cat) counts.set(cat, (counts.get(cat) ?? 0) + 1);
+  }
+  let best: ContentCategory = "claude_code_features";
+  let bestCount = 0;
+  for (const [cat, count] of counts) {
+    if (count > bestCount) {
+      bestCount = count;
+      best = cat;
+    }
+  }
+  return best;
 }
 
 function checkArticleSize(articleBody: string): boolean {

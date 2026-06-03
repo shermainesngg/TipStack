@@ -10,11 +10,17 @@ interface ArticleUpdate {
   sourceUrls: SourceUrl[];
 }
 
+// Mirrors the breadth guard in findMatchingArticle: an article this broad is a
+// multi-topic guide, so an update headline must describe it as such, not as a
+// standalone piece on the narrow new sub-topic.
+const BROAD_HOST_FOCUS_TAGS = 8;
+const BROAD_HOST_SOURCES = 8;
+
 async function getContentById(contentId: string) {
   const supabase = createServiceClient();
   const { data } = await supabase
     .from("content")
-    .select("title, summary")
+    .select("title, summary, tags_focus, source_urls")
     .eq("id", contentId)
     .single();
   return data;
@@ -50,7 +56,7 @@ A feed post is a short alert that tells practitioners what just changed. It link
 
 1. **Headline:** One sentence, 60-100 characters. State the actual update, feature, or technique — not the source or article. Never mention platforms, creators, or counts. Good: "Claude Code supports agentic workflows in projects". Bad: "Two YouTube creators share agentic workflow tips".
 2. **Summary:** 1-2 sentences of plain prose. Concise and actionable. No bullet points.
-3. **For updates to existing articles:** Emphasize what's NEW, not the full article scope.
+3. **For updates to existing articles:** Lead with what's new. But the reader opens the EXISTING living article, not a standalone piece — the headline must stay faithful to what that article actually covers. Never frame a single narrow sub-point as if it were the whole article. If the linked article is a broad multi-topic guide, the headline must read as an update to that guide, not as a standalone story about one detail.
 4. **For new articles:** Summarize the key insights.
 5. **No hype.** No "game-changing" or "revolutionary". Just state what's useful.
 6. **Priority:** Rate urgency 1-10. Reserve 9-10 for breaking changes/security issues. Most tips are 5-6.
@@ -81,13 +87,19 @@ export async function generateFeedPosts(
     const articleTitle = article?.title ?? "Untitled";
     const articleSummary = article?.summary ?? "";
 
+    const isBroadHost =
+      ((article?.tags_focus as string[] | undefined)?.length ?? 0) >= BROAD_HOST_FOCUS_TAGS ||
+      ((article?.source_urls as unknown[] | undefined)?.length ?? 0) >= BROAD_HOST_SOURCES;
+
     const sourceDesc = update.sourceUrls
       .map((s) => `- ${s.creator} (${s.platform})`)
       .join("\n");
 
     const context = update.isNew
       ? "This is a brand new article created from the sources below."
-      : "This is an update to an existing article with the new sources below.";
+      : isBroadHost
+        ? `This is an update to an existing BROAD, multi-topic guide titled "${articleTitle}". The reader will open that whole guide. Write the headline as an update to the guide — do NOT imply a standalone article about the narrow new sources below.`
+        : "This is an update to an existing article with the new sources below.";
 
     const result = await callClaudeCode<{ headline: string; summary: string; priority: number }>({
       systemPrompt: FEED_POST_SYSTEM_PROMPT,

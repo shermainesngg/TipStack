@@ -133,7 +133,7 @@ export default async function FeedPage() {
                   ? community[community.length - 1].published_at
                   : null
               }
-              platforms="youtube,reddit,twitter,docs"
+              platforms="youtube,reddit,twitter,docs,blog"
             />
           </div>
         </section>

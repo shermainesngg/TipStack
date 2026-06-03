@@ -29,7 +29,7 @@ interface ContentPiece {
   tags_workflow: string[];
   tags_domain: string[];
   tags_category: string;
-  source_urls: { url: string; platform: "youtube" | "reddit" | "twitter" | "news"; creator: string }[];
+  source_urls: { url: string; platform: "youtube" | "reddit" | "twitter" | "news" | "blog"; creator: string }[];
 }
 
 async function main() {
