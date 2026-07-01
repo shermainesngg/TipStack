@@ -91,17 +91,24 @@ interface HNItem {
 }
 
 async function searchHN(query: string, minTimestamp: number): Promise<HNHit[]> {
-  const url =
-    `https://hn.algolia.com/api/v1/search?` +
-    `query=${encodeURIComponent(query)}` +
-    `&tags=story` +
-    `&numericFilters=created_at_i>${minTimestamp},points>${HN_MIN_POINTS}` +
-    `&hitsPerPage=${HN_RESULTS_PER_QUERY}`;
+  // HN's Algolia index returns 400 for a `points` numericFilter and for raw
+  // `>`/`,` characters in the query string. So we filter by timestamp only
+  // (URL-encoded via URLSearchParams) and apply the points threshold client-side.
+  // We over-fetch to leave enough qualifying stories after the points filter.
+  const params = new URLSearchParams({
+    query,
+    tags: "story",
+    numericFilters: `created_at_i>${minTimestamp}`,
+    hitsPerPage: String(HN_RESULTS_PER_QUERY * 3),
+  });
+  const url = `https://hn.algolia.com/api/v1/search?${params.toString()}`;
 
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HN search failed: ${res.status}`);
   const json = await res.json();
-  return json.hits as HNHit[];
+  return (json.hits as HNHit[])
+    .filter((h) => h.points >= HN_MIN_POINTS)
+    .slice(0, HN_RESULTS_PER_QUERY);
 }
 
 async function fetchTopComments(storyId: string): Promise<string[]> {
