@@ -20,13 +20,16 @@ mkdir -p "$DIR/scripts/data"
 {
   echo "=== Pipeline started at $(date) ==="
 
-  echo "[1/3] Fetching new content..."
+  echo "[1/4] Fetching new content..."
   npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/fetch-all.ts
 
-  echo "[2/3] Processing fetched items..."
+  echo "[2/4] Fetching Anthropic changelog..."
+  npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/fetch-changelog.ts
+
+  echo "[3/4] Processing fetched items..."
   npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/process-fetched.ts
 
-  echo "[3/3] Dedup + synthesis..."
+  echo "[4/4] Dedup + synthesis..."
   npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/push-content.ts
 
   echo "=== Pipeline finished at $(date) ==="

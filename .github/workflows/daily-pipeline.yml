@@ -49,6 +49,9 @@ jobs:
       - name: Fetch new content
         run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/fetch-all.ts
 
+      - name: Fetch Anthropic changelog
+        run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/fetch-changelog.ts
+
       - name: Process fetched items
         run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/process-fetched.ts
 
