@@ -1,0 +1,56 @@
+name: Daily Content Pipeline
+
+on:
+  schedule:
+    # 08:17 UTC = 4:17 PM SGT. Offset from :00 because GitHub delays
+    # top-of-hour cron runs during congestion.
+    - cron: "17 8 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: daily-pipeline
+  cancel-in-progress: false
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+      REDDIT_CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      REDDIT_CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      TWITTER_COOKIES: ${{ secrets.TWITTER_COOKIES }}
+      TWITTER_USERNAME: ${{ secrets.TWITTER_USERNAME }}
+      TWITTER_EMAIL: ${{ secrets.TWITTER_EMAIL }}
+      TWITTER_PASSWORD: ${{ secrets.TWITTER_PASSWORD }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+      ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+      REVALIDATION_SECRET: ${{ secrets.REVALIDATION_SECRET }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Fetch new content
+        run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/fetch-all.ts
+
+      - name: Process fetched items
+        run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/process-fetched.ts
+
+      - name: Dedup + synthesis
+        run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/push-content.ts
