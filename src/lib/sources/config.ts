@@ -343,6 +343,29 @@ export const BLOG_FEEDS: BlogFeedConfig[] = [
     author: "Lilian Weng",
     url: "https://lilianweng.github.io/index.xml",
   },
+  // Mainstream AI press — covers HN's blind spots (product launches,
+  // enterprise/industry moves, same-day reporting). Higher volume, so the
+  // extraction/quality-filter stage discards more of these.
+  {
+    name: "TechCrunch — AI",
+    author: "TechCrunch",
+    url: "https://techcrunch.com/category/artificial-intelligence/feed/",
+  },
+  {
+    name: "The Verge — AI",
+    author: "The Verge",
+    url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml",
+  },
+  {
+    name: "Ars Technica — AI",
+    author: "Ars Technica",
+    url: "https://arstechnica.com/ai/feed/",
+  },
+  {
+    name: "MIT Technology Review — AI",
+    author: "MIT Technology Review",
+    url: "https://www.technologyreview.com/topic/artificial-intelligence/feed",
+  },
 ];
 
 /** Max entries to consider per feed (newest first) */
