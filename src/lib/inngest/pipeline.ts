@@ -29,10 +29,11 @@ export const pipelineFunction = inngest.createFunction(
   {
     id: "tipstack-pipeline",
     name: "TipStack Content Pipeline",
-    triggers: [
-      { event: "pipeline/run" },
-      { cron: "0 0 * * *" },  // 8 AM SGT (UTC+8)
-    ],
+    // Scheduling lives in the GitHub Actions daily pipeline
+    // (.github/workflows/daily-pipeline.yml). This function is kept only for
+    // manual/event invocation via `pipeline/run`; no cron trigger, so it can't
+    // double-run the pipeline if the app is deployed.
+    triggers: [{ event: "pipeline/run" }],
   },
   async ({ step }) => {
     const batchDate = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
