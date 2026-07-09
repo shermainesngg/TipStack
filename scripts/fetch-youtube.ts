@@ -2,13 +2,9 @@ import fs from "fs";
 import path from "path";
 import { YoutubeTranscript } from "youtube-transcript";
 import { isUrlProcessed, KNOWN_TOOLS, type FetchedItem } from "./lib/shared";
+import { YOUTUBE_CHANNELS } from "../src/lib/sources/config";
 
-const CHANNELS = [
-  { name: "Cole Medin", channelId: "UCMwVTLZIRRUyyVrkjDpn4pA" },
-  { name: "Nate Herk", channelId: "UC2ojq-nuP8ceeHqiroeKhBA" },
-  { name: "Chase Hannegan", channelId: "UCoy6cTJ7Tg0dqS-DI-_REsA" },
-  { name: "Simon Scrapes", channelId: "UCdCR4-uYOg5ju-IUuDnfnQA" },
-];
+const CHANNELS = YOUTUBE_CHANNELS;
 
 const VIDEOS_PER_CHANNEL = 5;
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;

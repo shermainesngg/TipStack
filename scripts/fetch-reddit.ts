@@ -1,19 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { isUrlProcessed, sleep, type FetchedItem } from "./lib/shared";
-
-const MVP_SUBREDDITS = [
-  { name: "ClaudeAI", tier: 1 },
-  { name: "ChatGPTPro", tier: 1 },
-  { name: "ChatGPTCoding", tier: 1 },
-  { name: "cursor", tier: 1 },
-  { name: "LocalLLaMA", tier: 1 },
-  { name: "AI_Agents", tier: 1 },
-  { name: "vibecoding", tier: 1 },
-];
-
-const REDDIT_MIN_SCORE = 10;
-const REDDIT_POSTS_PER_SUB = 10;
+import { MVP_SUBREDDITS, REDDIT_MIN_SCORE, REDDIT_POSTS_PER_SUB } from "../src/lib/sources/config";
 const REDDIT_USER_AGENT = "TipStack/1.0 (content aggregator)";
 
 const OUTPUT_PATH = path.resolve(__dirname, "data", "fetched-reddit.json");
