@@ -12,19 +12,37 @@ import { isUrlProcessed } from "./lib/shared";
 const OUTPUT_PATH = path.resolve(__dirname, "data", "fetched.json");
 const SKILL_META_PATH = path.resolve(__dirname, "data", "skill-meta.json");
 
+/**
+ * Run one source's fetch in isolation. A single flaky source (expired Twitter
+ * cookies, a blog feed 500, GitHub rate-limit) must never abort the whole
+ * daily ingestion — it degrades to its fallback and the run continues.
+ */
+async function safeSource<T>(label: string, fn: () => Promise<T>, fallback: T): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    console.error(`[${label}] source failed, continuing without it: ${err}`);
+    return fallback;
+  }
+}
+
 async function main() {
   // Docs fetch runs first — its keywords feed YouTube search discovery
-  const docsItems = await fetchDocsItems(isUrlProcessed);
+  const docsItems = await safeSource("docs", () => fetchDocsItems(isUrlProcessed), []);
   const docKeywords = extractFeatureKeywords(docsItems);
 
   // Reddit runs second — its titles also feed YouTube search
-  const { items: redditItems, titles: redditTitles } = await fetchReddit();
-  const youtubeItems = await fetchYouTube(redditTitles, docKeywords);
+  const { items: redditItems, titles: redditTitles } = await safeSource(
+    "reddit",
+    () => fetchReddit(),
+    { items: [], titles: [] }
+  );
+  const youtubeItems = await safeSource("youtube", () => fetchYouTube(redditTitles, docKeywords), []);
   const [twitterItems, newsItems, githubResult, blogItems] = await Promise.all([
-    fetchTwitter(),
-    fetchNews(),
-    fetchGitHubSkills(isUrlProcessed),
-    fetchBlogItems(isUrlProcessed),
+    safeSource("twitter", () => fetchTwitter(), []),
+    safeSource("news", () => fetchNews(), []),
+    safeSource("github", () => fetchGitHubSkills(isUrlProcessed), { items: [], skillMetas: new Map() }),
+    safeSource("blog", () => fetchBlogItems(isUrlProcessed), []),
   ]);
 
   const allItems = [...docsItems, ...youtubeItems, ...redditItems, ...twitterItems, ...newsItems, ...githubResult.items, ...blogItems];

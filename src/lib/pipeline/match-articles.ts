@@ -222,6 +222,7 @@ export async function matchAndUpdateArticles(
   const results: MatchResult[] = [];
 
   for (const group of groups) {
+    try {
     const tagsTool = dedupeStrings(group.flatMap((i) => i.raw_extract.tags_tool));
     const tagsFocus = dedupeStrings(group.flatMap((i) => i.raw_extract.tags_focus));
 
@@ -283,6 +284,14 @@ export async function matchAndUpdateArticles(
 
     for (const item of group) {
       await updateRawContentStatus(item.id, "merged");
+    }
+    } catch (err) {
+      // One bad topic group (e.g. a malformed Claude response during synthesis)
+      // must not abort the whole run — skip it and keep processing the rest.
+      console.error(
+        `Synthesis failed for group [${group.map((i) => i.id).join(", ")}], skipping: ${err}`
+      );
+      continue;
     }
   }
 

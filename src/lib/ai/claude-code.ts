@@ -33,6 +33,46 @@ interface ClaudeCodeOptions {
   maxTokens?: number;
 }
 
+/**
+ * Escape raw control characters (newlines, tabs, etc.) that appear *inside*
+ * JSON string literals, leaving structural whitespace between tokens untouched.
+ * The model occasionally emits these unescaped, producing invalid JSON.
+ */
+function escapeControlCharsInStrings(json: string): string {
+  let out = "";
+  let inString = false;
+  let escaped = false;
+  for (const ch of json) {
+    if (escaped) {
+      out += ch;
+      escaped = false;
+      continue;
+    }
+    if (ch === "\\") {
+      out += ch;
+      escaped = true;
+      continue;
+    }
+    if (ch === '"') {
+      inString = !inString;
+      out += ch;
+      continue;
+    }
+    if (inString) {
+      const code = ch.charCodeAt(0);
+      if (code < 0x20) {
+        if (ch === "\n") out += "\\n";
+        else if (ch === "\r") out += "\\r";
+        else if (ch === "\t") out += "\\t";
+        else out += "\\u" + code.toString(16).padStart(4, "0");
+        continue;
+      }
+    }
+    out += ch;
+  }
+  return out;
+}
+
 export async function callClaudeCode<T>(options: ClaudeCodeOptions): Promise<T> {
   const { systemPrompt, userMessage, jsonSchema, rawText } = options;
 
@@ -84,11 +124,18 @@ export async function callClaudeCode<T>(options: ClaudeCodeOptions): Promise<T> 
     const cleaned = resultText.replace(/^```(?:json)?\s*\n?/i, "").replace(/\n?```\s*$/i, "").trim();
 
     try {
-      const parsed = JSON.parse(cleaned);
-      return parsed as T;
-    } catch (parseErr) {
-      console.warn(`JSON parse failed (attempt ${attempt}/${maxAttempts}), retrying... Response starts with: ${cleaned.slice(0, 100)}`);
-      if (attempt === maxAttempts) throw parseErr;
+      return JSON.parse(cleaned) as T;
+    } catch {
+      // Claude sometimes emits raw control characters (unescaped newlines/tabs)
+      // inside JSON string values, which is invalid JSON. Escape them and retry
+      // the parse before giving up — this alone recovers most "Bad control
+      // character in string literal" failures.
+      try {
+        return JSON.parse(escapeControlCharsInStrings(cleaned)) as T;
+      } catch (parseErr) {
+        console.warn(`JSON parse failed (attempt ${attempt}/${maxAttempts}), retrying... Response starts with: ${cleaned.slice(0, 100)}`);
+        if (attempt === maxAttempts) throw parseErr;
+      }
     }
   }
 
