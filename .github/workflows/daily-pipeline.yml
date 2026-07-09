@@ -52,8 +52,5 @@ jobs:
       - name: Fetch Anthropic changelog
         run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/fetch-changelog.ts
 
-      - name: Process fetched items
+      - name: Process fetched items (extract, dedup, synthesize, feed posts)
         run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/process-fetched.ts
-
-      - name: Dedup + synthesis
-        run: npx tsx --require ./scripts/lib/stub-server-only.cjs scripts/push-content.ts
