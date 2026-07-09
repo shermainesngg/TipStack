@@ -21,8 +21,17 @@ interface SearchResult {
   headline_summary: string;
 }
 
+// The headline text is untrusted (derived from ingested content); Postgres
+// ts_headline wraps matches in bare <mark></mark>. Escape ALL HTML, then
+// re-enable only those bare mark tags — so no attacker-supplied tag or
+// attribute (e.g. <mark onmouseover=...>) can survive.
 function sanitizeHighlight(html: string): string {
-  return html.replace(/<(?!\/?mark\b)[^>]*>/g, "");
+  return html
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/&lt;mark&gt;/g, "<mark>")
+    .replace(/&lt;\/mark&gt;/g, "</mark>");
 }
 
 export function SearchOverlay() {

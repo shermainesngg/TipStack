@@ -2,7 +2,7 @@ import "server-only";
 import { createServiceClient } from "./server";
 import { createBrowserClient } from "./browser";
 import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, ContentCategory, FeedPost, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogChange, ChangeCategory } from "@/types";
-import { normalizeToolTag, expandToolAliases } from "@/lib/tools";
+import { normalizeToolTag, expandToolAliases, isKnownModel } from "@/lib/tools";
 
 const CARD_COLUMNS = "id, title, slug, summary, content_type, status, tags_tool, tags_focus, tags_workflow, tags_domain, tags_category, source_urls, created_at, published_at";
 
@@ -107,7 +107,7 @@ export async function updateRawContentStatus(
  * Minimum dedup quality score (1-10) for an article to auto-publish. Pieces at
  * or above this bar go straight to `published`; anything below is held as
  * `pending_review` for manual approval. Callers pass the source material's
- * quality score; when none is provided the piece auto-publishes.
+ * quality score; when none is provided the piece is held for review (fail closed).
  */
 const AUTO_PUBLISH_MIN_SCORE = 7;
 
@@ -122,6 +122,7 @@ export async function insertContent(params: {
   tagsFocus: string[];
   tagsWorkflow: string[];
   tagsDomain: string[];
+  tagsModel?: string[];
   tagsCategory: string;
   sourceUrls: SourceUrl[];
   qualityScore?: number;
@@ -130,8 +131,10 @@ export async function insertContent(params: {
   practicalUseCase?: string;
   tryThis?: string;
 }): Promise<string> {
+  // Fail closed: a piece missing a quality score is held for review, not
+  // auto-published. Only a present score at/above the threshold goes live.
   const autoPublish =
-    params.qualityScore == null || params.qualityScore >= AUTO_PUBLISH_MIN_SCORE;
+    params.qualityScore != null && params.qualityScore >= AUTO_PUBLISH_MIN_SCORE;
 
   const insertData: Record<string, unknown> = {
     title: params.title,
@@ -144,6 +147,7 @@ export async function insertContent(params: {
     tags_focus: params.tagsFocus,
     tags_workflow: params.tagsWorkflow,
     tags_domain: params.tagsDomain,
+    tags_model: params.tagsModel ?? [],
     tags_category: params.tagsCategory,
     source_urls: params.sourceUrls,
   };
@@ -636,6 +640,83 @@ export async function getFeedPosts(
       topic_tags_focus: content?.tags_focus ?? [],
     };
   });
+}
+
+// ─── model updates (auto-fed /models page) ──────────────────────────────────
+
+const MODEL_UPDATE_PLATFORM_LABEL: Record<string, string> = {
+  youtube: "YouTube",
+  reddit: "Reddit",
+  twitter: "X",
+  news: "News",
+  docs: "Docs",
+  github: "GitHub",
+  blog: "Blog",
+};
+
+export interface ModelUpdateRow {
+  headline: string;
+  date: string;
+  source: string;
+}
+
+/** Recent feed posts tied to content tagged with this model (newest first). */
+export async function getModelUpdates(
+  modelSlug: string,
+  limit = 6
+): Promise<ModelUpdateRow[]> {
+  const client = getReadClient();
+
+  const { data: contentRows, error: cErr } = await client
+    .from("content")
+    .select("id")
+    .eq("status", "published")
+    .contains("tags_model", [modelSlug]);
+  if (cErr) throw new Error(`Failed to fetch model content: ${cErr.message}`);
+
+  const ids = (contentRows as { id: string }[]).map((r) => r.id);
+  if (ids.length === 0) return [];
+
+  const { data, error } = await client
+    .from("feed_posts")
+    .select("headline, published_at, source_platforms")
+    .in("topic_content_id", ids)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  if (error) throw new Error(`Failed to fetch model updates: ${error.message}`);
+
+  return (
+    data as { headline: string; published_at: string; source_platforms: string[] }[]
+  ).map((r) => ({
+    headline: r.headline,
+    date: r.published_at,
+    source: MODEL_UPDATE_PLATFORM_LABEL[r.source_platforms?.[0]] ?? "Feed",
+  }));
+}
+
+/**
+ * Model tags seen in recent published content that aren't in the curated
+ * model set — surfaced so a human can decide whether to add them.
+ */
+export async function getUnknownModelTags(
+  sinceDays = 14
+): Promise<{ tag: string; count: number }[]> {
+  const since = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
+  const { data, error } = await getReadClient()
+    .from("content")
+    .select("tags_model")
+    .gte("created_at", since);
+  if (error) throw new Error(`Failed to fetch model tags: ${error.message}`);
+
+  const counts = new Map<string, number>();
+  for (const row of data as { tags_model: string[] | null }[]) {
+    for (const tag of row.tags_model ?? []) {
+      if (!isKnownModel(tag)) counts.set(tag, (counts.get(tag) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .map(([tag, count]) => ({ tag, count }))
+    .sort((a, b) => b.count - a.count);
 }
 
 // ─── topic matching (service client — pipeline only) ────────────────────────

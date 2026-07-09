@@ -13,6 +13,10 @@ export function MermaidDiagram({ chart }: { chart: string }) {
       const mermaid = (await import("mermaid")).default;
       mermaid.initialize({
         startOnLoad: false,
+        // Diagram source comes from ingested (untrusted) content. Strict mode
+        // encodes HTML in labels and disables click/script handlers, blocking
+        // XSS via crafted diagram text.
+        securityLevel: "strict",
         theme: "base",
         themeVariables: {
           primaryColor: "#e8efe7",
