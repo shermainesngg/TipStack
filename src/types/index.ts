@@ -29,6 +29,7 @@ export interface Content {
   tags_focus: string[];
   tags_workflow: string[];
   tags_domain: string[];
+  tags_model: string[];
   tags_category: ContentCategory;
   source_urls: SourceUrl[];
   created_at: string;
@@ -79,6 +80,7 @@ export interface ExtractionResult {
   tags_focus: string[];
   tags_workflow: string[];
   tags_domain: string[];
+  tags_model: string[];
   tags_category: ContentCategory;
   quality_signal: "high" | "medium" | "low";
   quality_score: number;
@@ -147,6 +149,14 @@ export interface FeedPost {
   topic_category?: ContentCategory;
   topic_sub_topic?: string;
   topic_tags_focus?: string[];
+}
+
+export interface DailyBrief {
+  brief_date: string; // YYYY-MM-DD
+  headline: string;
+  summary: string;
+  story_count: number;
+  generated_at: string;
 }
 
 // ─── Changelog Types ──────────────────────────────────────────────────────

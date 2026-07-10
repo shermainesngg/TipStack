@@ -45,3 +45,6 @@ scripts/data/
 
 # supabase temp
 supabase/.temp/
+
+# scratchpad artifacts
+scratchpad_*.png

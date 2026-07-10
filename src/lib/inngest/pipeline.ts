@@ -8,8 +8,9 @@ import { ingestBatch } from "@/lib/pipeline/ingest";
 import { codeDedup } from "@/lib/pipeline/dedup";
 import { matchAndUpdateArticles } from "@/lib/pipeline/match-articles";
 import { generateFeedPosts } from "@/lib/pipeline/generate-feed-posts";
+import { generateDailyBrief, fallbackDailyBrief } from "@/lib/pipeline/generate-daily-brief";
 import { notifyPipelineComplete } from "@/lib/pipeline/notify";
-import { getPublishedContent, flagArticleForReview, isUrlProcessed } from "@/lib/supabase/queries";
+import { getPublishedContent, flagArticleForReview, isUrlProcessed, getRecentFeedPosts, upsertDailyBrief } from "@/lib/supabase/queries";
 import type { FetchedItem } from "@/types";
 
 /**
@@ -135,6 +136,31 @@ export const pipelineFunction = inngest.createFunction(
 
     const feedPostsCreated = await step.run("generate-feed-posts", async () => {
       return generateFeedPosts(articleUpdates);
+    });
+
+    // ── Step 6b: Generate today's daily brief digest ────────────────────
+
+    await step.run("generate-daily-brief", async () => {
+      const today = new Date().toISOString().slice(0, 10);
+      const recent = await getRecentFeedPosts(1, 100);
+      const todays = recent.filter(
+        (p) => new Date(p.published_at).toISOString().slice(0, 10) === today
+      );
+      if (todays.length === 0) return null;
+
+      let brief;
+      try {
+        brief = await generateDailyBrief(todays);
+      } catch {
+        brief = fallbackDailyBrief(todays);
+      }
+      await upsertDailyBrief({
+        briefDate: today,
+        headline: brief.headline,
+        summary: brief.summary,
+        storyCount: todays.length,
+      });
+      return today;
     });
 
     // ── Step 7: Revalidate caches ───────────────────────────────────────

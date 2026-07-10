@@ -137,7 +137,6 @@ export async function GET(request: Request) {
 
   const isSquare = format === "social";
   const width = isSquare ? 1080 : 1200;
-  const height = isSquare ? 1080 : 630;
   const sq = isSquare;
 
   let entry: ChangelogEntry | null = null;
@@ -174,9 +173,12 @@ export async function GET(request: Request) {
 
   const headerH = sq ? 130 : 80;
   const gridPad = sq ? 36 : 28;
-  const gridH = height - headerH;
+  // Cards are sized to their content instead of stretching to fill a fixed
+  // canvas, and the overall image height follows from the row count — this
+  // keeps the image compact with no empty space below the text.
+  const cardH = sq ? 215 : 150;
   const cardW = Math.floor((width - gridPad * 2 - GAP * (cols - 1)) / cols);
-  const cardH = Math.floor((gridH - gridPad * 2 - GAP * (rows - 1)) / rows);
+  const height = headerH + gridPad * 2 + rows * cardH + GAP * (rows - 1);
 
   const tagFontSize = sq ? "13px" : "10px";
   const titleFontSize = sq ? "24px" : "16px";
@@ -256,7 +258,6 @@ export async function GET(request: Request) {
         <div
           style={{
             display: "flex",
-            flex: 1,
             padding: `${gridPad}px`,
             flexDirection: "column",
             gap: `${GAP}px`,
@@ -268,7 +269,7 @@ export async function GET(request: Request) {
               style={{
                 display: "flex",
                 gap: `${GAP}px`,
-                flex: 1,
+                height: `${cardH}px`,
               }}
             >
               {Array.from({ length: cols }).map((_, colIdx) => {

@@ -41,6 +41,7 @@ function makeRawContent(
       tags_focus: ["prompt_engineering"],
       tags_workflow: ["coding"],
       tags_domain: ["frontend"],
+      tags_model: [],
       tags_category: "prompting_and_rules",
       quality_signal: "high",
       quality_score: 8,

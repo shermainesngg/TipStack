@@ -4,6 +4,7 @@ import {
   insertContent,
   updateRawContentStatus,
 } from "@/lib/supabase/queries";
+import { normalizeModelTags } from "@/lib/tools";
 import type { SynthesisResult, RawContent } from "@/types";
 
 const SYNTHESIS_SCHEMA = {
@@ -322,6 +323,14 @@ ${itemDescriptions}`,
   const scoreById = new Map(
     items.map((i: RawContent) => [i.id, i.raw_extract.quality_score ?? 0])
   );
+  // Models are derived deterministically from the source items' extractions
+  // (union, normalized), not re-emitted by the synthesis model — more reliable.
+  const modelsById = new Map(
+    items.map((i: RawContent) => [
+      i.id,
+      normalizeModelTags(i.raw_extract.tags_model ?? []),
+    ])
+  );
 
   let piecesCreated = 0;
 
@@ -331,6 +340,9 @@ ${itemDescriptions}`,
       0,
       ...piece.source_items.map((id) => scoreById.get(id) ?? 0)
     );
+    const tagsModel = [
+      ...new Set(piece.source_items.flatMap((id) => modelsById.get(id) ?? [])),
+    ];
 
     await insertContent({
       title: piece.title,
@@ -342,6 +354,7 @@ ${itemDescriptions}`,
       tagsFocus: piece.tags_focus,
       tagsWorkflow: piece.tags_workflow,
       tagsDomain: piece.tags_domain ?? [],
+      tagsModel,
       tagsCategory: piece.tags_category ?? "claude_code_features",
       sourceUrls: piece.source_urls,
       qualityScore,

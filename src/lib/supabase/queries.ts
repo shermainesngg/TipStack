@@ -1,7 +1,7 @@
 import "server-only";
 import { createServiceClient } from "./server";
 import { createBrowserClient } from "./browser";
-import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, ContentCategory, FeedPost, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogChange, ChangeCategory } from "@/types";
+import type { Platform, ExtractionResult, SourceUrl, Content, ContentSummary, ContentCategory, FeedPost, DailyBrief, Skill, SkillType, FetchedSkillMeta, ChangelogEntry, ChangelogChange, ChangeCategory } from "@/types";
 import { normalizeToolTag, expandToolAliases, isKnownModel } from "@/lib/tools";
 
 const CARD_COLUMNS = "id, title, slug, summary, content_type, status, tags_tool, tags_focus, tags_workflow, tags_domain, tags_category, source_urls, created_at, published_at";
@@ -642,6 +642,73 @@ export async function getFeedPosts(
   });
 }
 
+/**
+ * All feed posts within the last `sinceDays` days (newest first), for the
+ * multi-day briefing navigator. Higher cap than the paginated feed since a
+ * week's worth must all be present client-side to page between editions.
+ */
+export async function getRecentFeedPosts(
+  sinceDays = 8,
+  max = 300
+): Promise<FeedPost[]> {
+  const floor = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
+
+  const { data, error } = await getReadClient()
+    .from("feed_posts")
+    .select(`${FEED_COLUMNS}, content!inner(slug, tags_category, sub_topic, tags_focus)`)
+    .gte("published_at", floor)
+    .order("published_at", { ascending: false })
+    .limit(max);
+  if (error) throw new Error(`Failed to fetch recent feed posts: ${error.message}`);
+
+  return (data as Record<string, unknown>[]).map((row) => {
+    const content = row.content as { slug: string; tags_category: string; sub_topic: string | null; tags_focus: string[] } | null;
+    return {
+      ...(row as unknown as FeedPost),
+      topic_slug: content?.slug,
+      topic_category: content?.tags_category as FeedPost["topic_category"],
+      topic_sub_topic: content?.sub_topic ?? undefined,
+      topic_tags_focus: content?.tags_focus ?? [],
+    };
+  });
+}
+
+// ─── daily briefs (AI digest per day) ────────────────────────────────────────
+
+export async function getDailyBriefsSince(sinceDays = 8): Promise<DailyBrief[]> {
+  const floor = new Date(Date.now() - sinceDays * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const { data, error } = await getReadClient()
+    .from("daily_briefs")
+    .select("brief_date, headline, summary, story_count, generated_at")
+    .gte("brief_date", floor)
+    .order("brief_date", { ascending: false });
+  if (error) throw new Error(`Failed to fetch daily briefs: ${error.message}`);
+  return (data ?? []) as DailyBrief[];
+}
+
+export async function upsertDailyBrief(params: {
+  briefDate: string; // YYYY-MM-DD
+  headline: string;
+  summary: string;
+  storyCount: number;
+}): Promise<void> {
+  const { error } = await getServiceClient()
+    .from("daily_briefs")
+    .upsert(
+      {
+        brief_date: params.briefDate,
+        headline: params.headline,
+        summary: params.summary,
+        story_count: params.storyCount,
+        generated_at: new Date().toISOString(),
+      },
+      { onConflict: "brief_date" }
+    );
+  if (error) throw new Error(`Failed to upsert daily brief: ${error.message}`);
+}
+
 // ─── model updates (auto-fed /models page) ──────────────────────────────────
 
 const MODEL_UPDATE_PLATFORM_LABEL: Record<string, string> = {
@@ -726,7 +793,12 @@ export async function getUnknownModelTags(
 // one produces a sprawling article that no feed headline can honestly describe, so
 // we refuse the merge and let the incoming item become its own focused article.
 const MAX_HOST_FOCUS_TAGS = 8;
-const MAX_HOST_SOURCES = 8;
+// Source count alone is NOT "lost focus" — a genuinely popular, focused topic
+// (e.g. "Claude Code routines") legitimately accrues many sources. Basing the
+// magnet skip on source count fragmented such topics into many duplicate
+// articles. Focus-tag *breadth* (above) is the real signal; keep only a high
+// source cap as a pathological-dumping-ground safety net.
+const MAX_HOST_SOURCES = 40;
 
 /**
  * Find an existing published article matching incoming tags via array overlap.
@@ -1177,6 +1249,18 @@ export async function pruneOldFeedPosts(keep = 16): Promise<number> {
 
   if (error) throw new Error(`Failed to prune feed posts: ${error.message}`);
   return old?.length ?? 0;
+}
+
+/** Delete feed posts older than `days` (age-based; keeps a full briefing window). */
+export async function pruneFeedPostsOlderThan(days = 14): Promise<number> {
+  const floor = new Date(Date.now() - days * 86_400_000).toISOString();
+  const { data, error } = await getServiceClient()
+    .from("feed_posts")
+    .delete()
+    .lt("published_at", floor)
+    .select("id");
+  if (error) throw new Error(`Failed to prune feed posts: ${error.message}`);
+  return data?.length ?? 0;
 }
 
 // ─── search ───────────────────────────────────────────────────────────────────

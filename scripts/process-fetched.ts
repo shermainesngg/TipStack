@@ -11,8 +11,9 @@ import { ingestBatch } from "../src/lib/pipeline/ingest";
 import { codeDedup } from "../src/lib/pipeline/dedup";
 import { matchAndUpdateArticles } from "../src/lib/pipeline/match-articles";
 import { generateFeedPosts } from "../src/lib/pipeline/generate-feed-posts";
+import { generateDailyBrief, fallbackDailyBrief } from "../src/lib/pipeline/generate-daily-brief";
 import { populateSkills } from "../src/lib/pipeline/populate-skills";
-import { isUrlProcessed, updateRawContentStatus } from "../src/lib/supabase/queries";
+import { isUrlProcessed, updateRawContentStatus, getRecentFeedPosts, upsertDailyBrief } from "../src/lib/supabase/queries";
 import type { FetchedItem, FetchedSkillMeta } from "../src/types";
 
 const INPUT_PATH = path.resolve(__dirname, "data", "fetched.json");
@@ -91,6 +92,35 @@ async function main() {
   console.log("Generating feed posts...");
   const feedPostsCreated = await generateFeedPosts(articleUpdates);
   console.log(`  Feed posts created: ${feedPostsCreated}\n`);
+
+  // Step 6: Generate today's daily brief digest
+  console.log("Generating daily brief...");
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const recent = await getRecentFeedPosts(1, 100);
+    const todays = recent.filter(
+      (p) => new Date(p.published_at).toISOString().slice(0, 10) === today
+    );
+    if (todays.length > 0) {
+      let brief;
+      try {
+        brief = await generateDailyBrief(todays);
+      } catch {
+        brief = fallbackDailyBrief(todays);
+      }
+      await upsertDailyBrief({
+        briefDate: today,
+        headline: brief.headline,
+        summary: brief.summary,
+        storyCount: todays.length,
+      });
+      console.log(`  Brief: "${brief.headline}" (${todays.length} stories)\n`);
+    } else {
+      console.log("  No posts today — skipped\n");
+    }
+  } catch (err) {
+    console.log(`  Brief generation skipped: ${err instanceof Error ? err.message : err}\n`);
+  }
 
   console.log("=== Pipeline complete ===");
   console.log(`  Fetched:      ${items.length}`);

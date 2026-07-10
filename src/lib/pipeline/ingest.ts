@@ -55,6 +55,12 @@ const BATCH_EXTRACTION_SCHEMA = {
             description:
               'Technical domain areas this content applies to. Use lowercase_snake_case. Examples: "frontend", "backend", "devops", "ci_cd", "mobile", "data_engineering", "machine_learning", "infrastructure", "databases", "api_design", "security_engineering"',
           },
+          tags_model: {
+            type: "array",
+            items: { type: "string" },
+            description:
+              'Specific AI MODELS discussed or evaluated — NOT products. Use lowercase with hyphens. The model goes here; the product goes in tags_tool (e.g. model "claude-opus-4-8" vs product "claude_code"; model "gpt-5-5" vs product "chatgpt"). Canonical values: "claude-fable-5", "claude-opus-4-8", "claude-sonnet-5", "claude-haiku-4-5", "gpt-5-5", "gemini-3-5-pro", "deepseek-v4". Use a similar hyphenated form for others (e.g. "grok-4"). Empty array if no specific model is discussed.',
+          },
           tags_category: {
             type: "string",
             enum: [
@@ -94,6 +100,7 @@ const BATCH_EXTRACTION_SCHEMA = {
           "tags_focus",
           "tags_workflow",
           "tags_domain",
+          "tags_model",
           "tags_category",
           "quality_score",
           "quality_signal",

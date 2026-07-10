@@ -1,5 +1,5 @@
 import { callClaudeCode, pMap } from "@/lib/ai/claude-code";
-import { insertFeedPost, pruneOldFeedPosts } from "@/lib/supabase/queries";
+import { insertFeedPost, pruneFeedPostsOlderThan } from "@/lib/supabase/queries";
 import { createServiceClient } from "@/lib/supabase/server";
 import type { SourceUrl } from "@/types";
 
@@ -142,7 +142,8 @@ Platforms involved: ${update.sourcePlatforms.join(", ")}`,
     });
   }
 
-  await pruneOldFeedPosts(16);
+  // Keep two weeks so the multi-day briefing navigator has a full window.
+  await pruneFeedPostsOlderThan(14);
 
   return toPublish.length;
 }
