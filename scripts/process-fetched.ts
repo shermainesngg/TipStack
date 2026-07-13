@@ -93,20 +93,35 @@ async function main() {
   const feedPostsCreated = await generateFeedPosts(articleUpdates);
   console.log(`  Feed posts created: ${feedPostsCreated}\n`);
 
-  // Step 6: Generate today's daily brief digest
+  // Step 6: Generate today's daily brief digest.
+  // Failures here must be LOUD, never silently swallowed: a green run must not
+  // be able to hide a missing brief (see the July 2026 gap that went unnoticed).
   console.log("Generating daily brief...");
+  let briefStatus: "ok" | "fallback" | "no-posts" | "failed" = "failed";
   try {
     const today = new Date().toISOString().slice(0, 10);
     const recent = await getRecentFeedPosts(1, 100);
     const todays = recent.filter(
       (p) => new Date(p.published_at).toISOString().slice(0, 10) === today
     );
-    if (todays.length > 0) {
+    if (todays.length === 0) {
+      briefStatus = "no-posts";
+      console.warn(
+        `  ⚠ No feed posts dated ${today} — brief skipped (scanned ${recent.length} recent posts).`
+      );
+    } else {
       let brief;
       try {
         brief = await generateDailyBrief(todays);
-      } catch {
+        briefStatus = "ok";
+      } catch (genErr) {
         brief = fallbackDailyBrief(todays);
+        briefStatus = "fallback";
+        console.warn(
+          `  ⚠ AI brief generation failed, using deterministic fallback: ${
+            genErr instanceof Error ? genErr.message : genErr
+          }`
+        );
       }
       await upsertDailyBrief({
         briefDate: today,
@@ -114,12 +129,15 @@ async function main() {
         summary: brief.summary,
         storyCount: todays.length,
       });
-      console.log(`  Brief: "${brief.headline}" (${todays.length} stories)\n`);
-    } else {
-      console.log("  No posts today — skipped\n");
+      console.log(
+        `  Brief${briefStatus === "fallback" ? " (fallback)" : ""}: "${brief.headline}" (${todays.length} stories)\n`
+      );
     }
   } catch (err) {
-    console.log(`  Brief generation skipped: ${err instanceof Error ? err.message : err}\n`);
+    briefStatus = "failed";
+    console.error(
+      `  ✗ Brief generation FAILED: ${err instanceof Error ? err.stack || err.message : err}\n`
+    );
   }
 
   console.log("=== Pipeline complete ===");
@@ -128,6 +146,17 @@ async function main() {
   console.log(`  Kept:         ${kept.length}`);
   console.log(`  Articles:     ${articleUpdates.length}`);
   console.log(`  Feed posts:   ${feedPostsCreated}`);
+  console.log(`  Daily brief:  ${briefStatus}`);
+
+  // A genuine brief failure exits non-zero so the GitHub Actions run goes red
+  // and we notice — the rest of the pipeline has already persisted its work.
+  if (briefStatus === "failed") {
+    process.exitCode = 1;
+    console.error(
+      "\n✗ Pipeline persisted content but the daily brief did not generate. " +
+        "Backfill with: npx tsx scripts/backfill-briefs.ts"
+    );
+  }
 }
 
 main().catch((err) => {
