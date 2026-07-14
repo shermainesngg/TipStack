@@ -109,7 +109,7 @@ export async function updateRawContentStatus(
  * `pending_review` for manual approval. Callers pass the source material's
  * quality score; when none is provided the piece is held for review (fail closed).
  */
-const AUTO_PUBLISH_MIN_SCORE = 7;
+const AUTO_PUBLISH_MIN_SCORE = 6;
 
 /** Insert a synthesized content piece */
 export async function insertContent(params: {
