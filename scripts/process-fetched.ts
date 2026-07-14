@@ -13,7 +13,7 @@ import { matchAndUpdateArticles } from "../src/lib/pipeline/match-articles";
 import { generateFeedPosts } from "../src/lib/pipeline/generate-feed-posts";
 import { generateDailyBrief, fallbackDailyBrief } from "../src/lib/pipeline/generate-daily-brief";
 import { populateSkills } from "../src/lib/pipeline/populate-skills";
-import { isUrlProcessed, updateRawContentStatus, getRecentFeedPosts, upsertDailyBrief } from "../src/lib/supabase/queries";
+import { isUrlProcessed, updateRawContentStatus, getFeedPostsSince, upsertDailyBrief } from "../src/lib/supabase/queries";
 import type { FetchedItem, FetchedSkillMeta } from "../src/types";
 
 const INPUT_PATH = path.resolve(__dirname, "data", "fetched.json");
@@ -100,7 +100,9 @@ async function main() {
   let briefStatus: "ok" | "fallback" | "no-posts" | "failed" = "failed";
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const recent = await getRecentFeedPosts(1, 100);
+    // Service-client read (no published-content join) so days whose content is
+    // held in pending_review still get a brief — see getFeedPostsSince.
+    const recent = await getFeedPostsSince(1, 100);
     const todays = recent.filter(
       (p) => new Date(p.published_at).toISOString().slice(0, 10) === today
     );

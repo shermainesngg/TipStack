@@ -673,6 +673,29 @@ export async function getRecentFeedPosts(
   });
 }
 
+/**
+ * Feed posts within the last `sinceDays`, read with the SERVICE client and
+ * WITHOUT the published-content inner join. The daily-brief step uses this so a
+ * day still counts its posts even when the underlying article is held in
+ * `pending_review` (the fail-closed publish gate) — unlike getRecentFeedPosts,
+ * whose anon `content!inner` join hides unpublished content and would make the
+ * brief falsely conclude "no posts today". Newest-first.
+ */
+export async function getFeedPostsSince(
+  sinceDays = 1,
+  max = 100
+): Promise<FeedPost[]> {
+  const floor = new Date(Date.now() - sinceDays * 86_400_000).toISOString();
+  const { data, error } = await getServiceClient()
+    .from("feed_posts")
+    .select(FEED_COLUMNS)
+    .gte("published_at", floor)
+    .order("published_at", { ascending: false })
+    .limit(max);
+  if (error) throw new Error(`Failed to fetch feed posts: ${error.message}`);
+  return data as unknown as FeedPost[];
+}
+
 // ─── daily briefs (AI digest per day) ────────────────────────────────────────
 
 export async function getDailyBriefsSince(sinceDays = 8): Promise<DailyBrief[]> {
