@@ -142,6 +142,31 @@ async function main() {
     );
   }
 
+  // Step 7: bust the site's "feed" cache so new content + brief show within
+  // minutes. The home page caches its data via `"use cache"` + cacheLife("hours"),
+  // so without this a run's output can lag by up to an hour. REVALIDATION_SECRET
+  // is set in the GitHub Actions env; SITE_URL overrides the production default.
+  const revalSecret = process.env.REVALIDATION_SECRET;
+  if (revalSecret) {
+    const siteUrl = process.env.SITE_URL ?? "https://tip-stack.vercel.app";
+    try {
+      const res = await fetch(`${siteUrl}/api/revalidate`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ tag: "feed", secret: revalSecret }),
+      });
+      console.log(`Revalidated feed cache: ${res.status}\n`);
+    } catch (err) {
+      console.warn(
+        `⚠ Feed cache revalidation failed (content is still saved): ${
+          err instanceof Error ? err.message : err
+        }\n`
+      );
+    }
+  } else {
+    console.log("Feed cache revalidation skipped (no REVALIDATION_SECRET set)\n");
+  }
+
   console.log("=== Pipeline complete ===");
   console.log(`  Fetched:      ${items.length}`);
   console.log(`  Ingested:     ${ingested.length}`);
