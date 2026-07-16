@@ -27,12 +27,12 @@ const CLASSIFY_SCHEMA = {
     summary: {
       type: "string",
       description:
-        "A single concise sentence (max 15 words) describing what this skill does. Written for a card UI — be specific, not generic.",
+        "One crisp phrase, max 10 words, saying what this skill does. Written for a small card. Start with a verb. No filler, no 'This skill', 'A tool that', or restating the name.",
     },
     use_case: {
       type: "string",
       description:
-        "2-3 sentences explaining when and why you'd use this skill. Include a concrete example if possible. Max 60 words.",
+        "1-2 short sentences, max 30 words, on when to reach for this skill. Lead with the trigger or problem. No filler, no restating the name, no marketing.",
     },
   },
   required: ["skill_type", "skill_subcategory", "summary", "use_case"],
@@ -52,10 +52,10 @@ const CLASSIFY_SYSTEM_PROMPT = `You classify Claude Code community skills into o
 Based on the repo name, description, topics, and README excerpt:
 1. Classify it into exactly one type.
 2. Pick a short subcategory label (2-3 words, Title Case) that groups related skills within that type. Examples: "Database", "API Integration", "Git Hooks", "React Components", "Markdown Linting", "Multi Agent". Reuse existing subcategory names when the skill fits — prefer consistency over novelty.
-3. Write a "summary" — one punchy sentence (max 15 words) saying what it does. This appears on a small card, so be specific and concise.
-4. Write a "use_case" — 2-3 sentences (max 60 words) explaining when you'd reach for this skill and a concrete example. This appears in a hover tooltip.
+3. Write a "summary" — one crisp phrase, max 10 words, starting with a verb, saying what it does. Appears on a small card. No filler, no "This skill"/"A tool that", no restating the name.
+4. Write a "use_case" — 1-2 short sentences, max 30 words, on when you'd reach for it. Lead with the trigger or problem. No filler, no marketing, no restating the name.
 
-Respond with valid JSON matching the schema provided.`;
+Be ruthless about concision — every word must earn its place. Respond with valid JSON matching the schema provided.`;
 
 interface ClassifyResult {
   skill_type: SkillType;

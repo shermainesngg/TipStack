@@ -98,7 +98,7 @@ export function SkillCard({ skill }: { skill: Skill }) {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -8 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute left-full top-0 z-20 ml-2 w-72 rounded-2xl
+            className="absolute left-full top-0 z-20 ml-2 w-80 max-h-[75vh] overflow-y-auto rounded-2xl
               bg-[#fafcfa] dark:bg-[#1E241E]
               shadow-[0_4px_12px_rgba(0,0,0,0.08),0_16px_40px_rgba(0,0,0,0.12)]
               dark:shadow-[0_4px_12px_rgba(0,0,0,0.3)]
@@ -115,7 +115,7 @@ export function SkillCard({ skill }: { skill: Skill }) {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#9B9B8E] mb-1 block">
                   Use Case
                 </span>
-                <p className="text-[13px] leading-[1.6] text-[#3D3D50] dark:text-[#C8D0C6] line-clamp-4">
+                <p className="text-[13px] leading-[1.6] text-[#3D3D50] dark:text-[#C8D0C6]">
                   {skill.use_case ?? skill.readme_excerpt}
                 </p>
               </div>
