@@ -1,6 +1,12 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { MermaidDiagram } from "./mermaid-diagram";
+import { Diagram } from "./diagrams";
+
+/** Fenced code languages that render as block figures, not <pre> code. */
+const FIGURE_LANGS = ["language-mermaid", "language-diagram"];
+const isFigureLang = (className?: string) =>
+  !!className && FIGURE_LANGS.some((l) => className.includes(l));
 
 export function MarkdownBody({ content }: { content: string }) {
   return (
@@ -60,6 +66,9 @@ export function MarkdownBody({ content }: { content: string }) {
               <MermaidDiagram chart={String(children).replace(/\n$/, "")} />
             );
           }
+          if (className?.includes("language-diagram")) {
+            return <Diagram source={String(children).replace(/\n$/, "")} />;
+          }
           if (isBlock) {
             return (
               <code className="block rounded-xl bg-[#1A1A2E] p-5 font-mono text-sm leading-relaxed text-[#E8EDE6] overflow-x-auto">
@@ -75,7 +84,7 @@ export function MarkdownBody({ content }: { content: string }) {
         },
         pre: ({ children }) => {
           const child = children as React.ReactElement<{ className?: string }>;
-          if (child?.props?.className?.includes("language-mermaid")) {
+          if (isFigureLang(child?.props?.className)) {
             return <>{children}</>;
           }
           return (

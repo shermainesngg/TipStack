@@ -22,6 +22,32 @@ These patterns are BANNED in TipStack. If you find yourself writing any of them,
 7. **Cards wrapped in cards** — Flatten the hierarchy. Not everything needs a container.
 8. **Gradient text** — Solid colors only for text.
 
+> **One sanctioned exception — article diagrams.** In-body article diagrams use a
+> separate "blueprint" palette (indigo/ember/teal on warm paper) that deliberately
+> departs from the sage site chrome and the cold-blue ban. This applies ONLY inside
+> the diagram components. See "Article Diagrams" below. Everything else on the site
+> still follows the warm-sage system.
+
+## Article Diagrams
+
+Article bodies (markdown, rendered by `src/components/markdown-body.tsx`) get
+diagrams via the **reusable component library in `src/components/diagrams/`** —
+not mermaid, and not hand-rolled per article. Authors embed a fenced ` ```diagram `
+block whose body is JSON with a `type` (`loop`, `pipeline`, `slices`, `zone`,
+`push-pull`). Full config reference: `src/components/diagrams/README.md`.
+
+Design language for diagrams (the "blueprint" look, distinct from site chrome):
+
+- **Palette** (see `diagrams/tokens.ts`): warm paper surfaces `#F5F3EE` / `#12151B`,
+  panels `#FBFAF6` / `#1A1F28`, and three phase tones — Plan `#3554B0` (indigo),
+  Implement `#C2560E` (ember), Validate `#0F766E` (teal), plus `red` for failure states.
+- **Fonts**: `font-mono` (JetBrains) for the instrument vocabulary (skill names,
+  step numbers, labels); `font-heading` (Bricolage) for node titles.
+- Theme-aware via `dark:` variants; every value flows through `tokens.ts` — never
+  inline new diagram colors. Add new diagram types by following the README recipe.
+- **Deploy note**: publishing an article body with ` ```diagram ` fences requires
+  the diagram component code to be deployed, or the fences render as raw JSON.
+
 ## Fonts
 
 Load from Google Fonts. Three families, each with a clear role:
